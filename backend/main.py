@@ -1,50 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from app.config import settings
-from app.api.detection import router as detection_router
-from app.utils.config import ensure_directories
 
-ensure_directories()
+app = FastAPI()
 
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.APP_VERSION,
-    description="遥感目标检测平台后端API"
-)
-
+# 允许 Vue 前端跨域访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["http://localhost:5173"],  # Vue 默认端口
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
-
-app.include_router(detection_router, prefix="/api")
-
-
-@app.get("/")
-async def root():
-    return {
-        "name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "status": "running"
-    }
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG
-    )
+@app.get("/api/test/connect")
+async def test_connect():
+    return {"code": 200, "message": "前后端连通成功！"}
