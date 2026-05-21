@@ -6,9 +6,9 @@ import time
 # 数据库连接配置 (对应你 Docker 中的 postgres 容器端口 5432)
 DB_CONFIG = {
     "host": "localhost",  # 如果在宿主机跑代码填 localhost，如果后端也进 Docker 填 postgres
-    "database": "postgres",  # 默认数据库名
-    "user": "postgres",  # 默认用户名
-    "password": "postgres",  # 👈 请根据你创建 postgres 容器时设置的密码修改
+    "database": "my_db",  # 默认数据库名
+    "user": "my_user",  # 默认用户名
+    "password": "123456",  # 👈 请根据你创建 postgres 容器时设置的密码修改
     "port": "5432"
 }
 

@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 import traceback
@@ -7,6 +8,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
+import jwt
+from pydantic import BaseModel
+import bcrypt
 
 app = FastAPI()
 
@@ -29,6 +33,129 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 引入数据库验证函数
+from database import verify_user
+
+# JWT 加密密钥 (生产环境建议换成复杂的随机字符串)
+JWT_SECRET = "rsod-platform-secret-key-2026-secure-xyz"
+JWT_ALGORITHM = "HS256"
+
+# ... 你原本已有的 app = FastAPI() 和 CORS 跨域中间件保持不动 ...
+
+# 1. 定义前端传来的数据格式模型
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+# 🌟 新增：注册请求模型
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    # 注意：前端多传的 email, confirmPassword, agree 等字段如果不放在这里，Pydantic 默认会自动忽略，不影响注册
+
+@app.post("/api/auth/login")
+async def login(credentials: LoginRequest):
+    try:
+        username = credentials.username
+        password = credentials.password
+
+        # 去 PostgreSQL 中核对账密
+        user_info = verify_user(username, password)
+
+        if user_info:
+            # 账密正确：生成一个有效期为 24 小时的 JWT Token 令牌
+            # 🌟 核心修改：使用 .timestamp() 将时间对象换成 JWT 库认得的数字时间戳！
+            now = datetime.datetime.utcnow()
+            payload = {
+                "user_id": user_info["id"],
+                "username": user_info["username"],
+                "role": user_info["role"],
+                "exp": int((now + datetime.timedelta(hours=24)).timestamp()),  # 👈 改成这一行
+                "iat": int(now.timestamp())  # 👈 顺便加上签发时间
+            }
+            token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+            # 返回符合前端统一拦截器规范的标准的 200 数据包
+            return {
+                "code": 200,
+                "message": "登录成功，欢迎回来！",
+                "data": {
+                    "token": token,
+                    "user": {
+                        "username": user_info["username"],
+                        "role": user_info["role"]
+                    }
+                }
+            }
+        else:
+            # 账密错误：按照前后端约定的规范返回错误结构
+            return JSONResponse(
+                status_code=400,
+                content={"code": 400, "message": "用户名或密码错误！"}
+            )
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"code": 500, "message": f"推理失败: {str(e)}"}
+        )
+
+
+# 🌟 新增：用户注册接口
+@app.post("/api/auth/register")
+async def register(credentials: RegisterRequest):
+    try:
+        username = credentials.username
+        password = credentials.password
+
+        # 后端二次基础防线校验
+        if len(username) < 3 or len(password) < 6:
+            return JSONResponse(
+                status_code=400,
+                content={"code": 400, "message": "注册失败：用户名至少3位，密码至少6位！"}
+            )
+
+        # 引入数据库连接配置
+        from database import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # 检查用户名是否已经在数据库中名花有主
+        cursor.execute("SELECT id FROM users WHERE username = %s;", (username,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return JSONResponse(
+                status_code=400,
+                content={"code": 400, "message": "该用户名已被注册，请换一个名字！"}
+            )
+
+        # 使用 bcrypt 对新注册的用户明文密码进行强哈希加密
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+        # 插入新用户，默认身份给普通用户 'user'
+        cursor.execute(
+            "INSERT INTO users (username, password, role) VALUES (%s, %s, %s);",
+            (username, hashed_password, "user")
+        )
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        # 返回符合前端网络拦截器预期的规范成功格式
+        return {
+            "code": 200,
+            "message": "恭喜你，注册成功！快去登录吧。"
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"code": 500, "message": f"服务器注册异常: {str(e)}"}
+        )
 
 # 测试连接接口
 @app.get("/api/test/connect")
