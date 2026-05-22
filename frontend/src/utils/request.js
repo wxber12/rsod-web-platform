@@ -22,7 +22,10 @@ service.interceptors.response.use(
     return response.data
   },
   error => {
-    ElMessage.error('请求失败：' + (error.response?.data?.message || '服务器错误'))
+    // 🌟 优化：优先读取 message，其次读取 FastAPI 默认的 detail，最后保底服务器错误
+    const errorMsg = error.response?.data?.message || error.response?.data?.detail || '服务器错误'
+
+    ElMessage.error('请求失败：' + errorMsg)
     return Promise.reject(error)
   }
 )

@@ -23,3 +23,27 @@ export function register(data) {
     data: data
   })
 }
+
+/**
+ * 申请找回密码（发送邮件）
+ * @param {Object} data - 包含 email 的对象
+ */
+export function forgotPassword(data) {
+  return request({
+    url: '/auth/forgot-password',
+    method: 'post',
+    data: data
+  })
+}
+
+/**
+ * 拿着 Token 真正去修改密码
+ * @param {Object} data - 包含 token 和 new_password 的对象
+ */
+export function resetPassword(data) {
+  return request({
+    url: '/auth/reset-password',
+    method: 'post',
+    data: data
+  })
+}
