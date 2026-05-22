@@ -4,20 +4,20 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-⼆、Docker Compose部署
-2.1 安装Docker（如未安装）
-2.2 创建docker-compose.yml
 # 环境变量
 .env
 .env.local
-# 数据⽂件
+# 数据文件（数据集体积过大，不入库）
 data/
+dataset/
 uploads/
 results/
 # Docker数据
 storage/
-# 模型⽂件
-models/*.pt
+# 模型权重（运行时下载，不入库）
+*.pt
+*.pth
+*.onnx
 # IDE配置
 .vscode/
 .idea/
