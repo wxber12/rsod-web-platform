@@ -33,6 +33,7 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     username VARCHAR(50) NOT NULL UNIQUE,
                     password VARCHAR(255) NOT NULL,
+                    email VARCHAR(100) UNIQUE,
                     role VARCHAR(20) DEFAULT 'user',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -46,8 +47,8 @@ def init_db():
                 hashed_password = bcrypt.hashpw("123456".encode('utf-8'), salt).decode('utf-8')
 
                 cursor.execute(
-                    "INSERT INTO users (username, password, role) VALUES (%s, %s, %s);",
-                    ("admin", hashed_password, "admin")
+                    "INSERT INTO users (username, password, email, role) VALUES (%s, %s, %s, %s);",
+                    ("admin", hashed_password, "admin@example.com", "admin")
                 )
                 conn.commit()
                 print("💡 PostgreSQL 初始化成功：已成功创建安全的默认账号 admin / 123456")

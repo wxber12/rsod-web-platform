@@ -22,11 +22,12 @@
             placeholder="请输入您的注册邮箱"
             size="large"
             prefix-icon="Message"
+            @keyup.enter="handleSubmit"
           />
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" size="large" class="submit-btn" @click="handleSubmit">
+          <el-button type="primary" size="large" class="submit-btn" :loading="isLoading" @click="handleSubmit">
             发送重置链接
           </el-button>
         </el-form-item>
@@ -49,6 +50,7 @@ import { forgotPassword } from "../api/auth";
 
 const router = useRouter();
 const forgotFormRef = ref(null);
+const isLoading = ref(false); // 增加 loading 状态
 
 const forgotForm = reactive({
   email: "",
@@ -73,6 +75,7 @@ const handleSubmit = () => {
 
   forgotFormRef.value.validate(async (valid) => {
     if (valid) {
+      isLoading.value = true; // 开始加载
       try {
         console.log("🚀 前端格式校验通过！准备向后端发送数据:", forgotForm.email);
 
@@ -92,8 +95,10 @@ const handleSubmit = () => {
           ElMessage.error(`后端报错 (${error.response.status}): ${apiMessage}`);
         } else {
           // 如果连响应都没有（比如跨域失败、或者 8000 端口压根连不上）
-          ElMessage.error("网络连接失败！请按 F12 查看控制台(Console)是否有跨域(CORS)红字报错");
+          ElMessage.error("网络连接失败或超时！请检查后端配置或控制台报错。");
         }
+      } finally {
+        isLoading.value = false; // 结束加载
       }
     } else {
       console.warn("⚠️ 邮箱格式验证未通过，被 Element 拦截");

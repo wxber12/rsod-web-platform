@@ -20,6 +20,7 @@
             v-model="registerForm.username"
             placeholder="请输入用户名"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><User /></el-icon>
@@ -33,6 +34,7 @@
             type="email"
             placeholder="请输入邮箱"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><Message /></el-icon>
@@ -46,6 +48,7 @@
             type="password"
             placeholder="请输入密码"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><Lock /></el-icon>
@@ -59,6 +62,7 @@
             type="password"
             placeholder="请确认密码"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><Lock /></el-icon>
@@ -137,22 +141,16 @@ const registerRules = {
       trigger: "blur",
     },
   ],
-  agree: [
-    {
-      validator: (rule, value, callback) => {
-        if (!value) {
-          callback(new Error("请同意服务条款和隐私政策"));
-        } else {
-          callback();
-        }
-      },
-      trigger: "change",
-    },
-  ],
 };
 
 // 🌟 升级为真实的 async/await 注册对接逻辑
 const handleRegister = () => {
+  // 1. 优先检查是否勾选了同意协议 (弹窗提醒)
+  if (!registerForm.agree) {
+    ElMessage.warning("请先阅读并勾选同意服务条款和隐私政策！");
+    return;
+  }
+
   registerFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true;
@@ -160,7 +158,8 @@ const handleRegister = () => {
         // 向 FastAPI 发送注册数据，只剥离出后端需要的字段
         const res = await register({
           username: registerForm.username,
-          password: registerForm.password
+          password: registerForm.password,
+          email: registerForm.email // 🌟 将邮箱字段发送给后端
         });
 
         // 兼容 request.js 拦截器剥皮与不剥皮格式

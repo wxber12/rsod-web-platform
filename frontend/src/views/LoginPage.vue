@@ -20,6 +20,7 @@
             v-model="loginForm.username"
             placeholder="请输入用户名"
             size="large"
+            @keyup.enter="handleLogin"
           >
             <template #prefix>
               <el-icon><User /></el-icon>

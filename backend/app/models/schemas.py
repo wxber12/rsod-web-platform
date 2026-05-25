@@ -30,6 +30,28 @@ class SingleDetectionResponse(BaseModel):
     data: Optional[DetectionResult] = None
 
 
+class BatchDetectionResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[DetectionResult]
+
+
+class VideoDetectionResult(BaseModel):
+    detection_id: str
+    video_url: str
+    result_video_url: str
+    total_frames: int
+    detection_time: float
+    model_name: str
+    created_at: datetime
+
+
+class VideoDetectionResponse(BaseModel):
+    success: bool
+    message: str
+    data: Optional[VideoDetectionResult] = None
+
+
 class HistoryItem(BaseModel):
     id: str
     image_url: str
@@ -57,3 +79,14 @@ class TargetListResponse(BaseModel):
     success: bool
     message: str
     data: List[TargetItem]
+
+
+class ChatRequest(BaseModel):
+    question: str
+    history: Optional[List[dict]] = []
+
+
+class ChatResponse(BaseModel):
+    success: bool
+    message: str
+    answer: str

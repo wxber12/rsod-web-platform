@@ -14,6 +14,7 @@
             placeholder="请输入新密码(至少6位)"
             show-password
             size="large"
+            @keyup.enter="handleReset"
           />
         </el-form-item>
 
@@ -24,6 +25,7 @@
             placeholder="请再次输入新密码"
             show-password
             size="large"
+            @keyup.enter="handleReset"
           />
         </el-form-item>
 
