@@ -39,6 +39,22 @@ def init_db():
                 );
             """)
 
+            # 2. 创建检测历史记录表
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS detection_history (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER REFERENCES users(id),
+                    detection_id VARCHAR(100) NOT NULL,
+                    type VARCHAR(20) NOT NULL, -- single, batch, video
+                    original_url TEXT NOT NULL,
+                    result_url TEXT NOT NULL,
+                    total_objects INTEGER DEFAULT 0,
+                    detection_time FLOAT DEFAULT 0.0,
+                    model_name VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
             # 2. 检查是否已经存在 admin 账号
             cursor.execute("SELECT * FROM users WHERE username = %s;", ("admin",))
             if not cursor.fetchone():
@@ -50,9 +66,9 @@ def init_db():
                     "INSERT INTO users (username, password, email, role) VALUES (%s, %s, %s, %s);",
                     ("admin", hashed_password, "admin@example.com", "admin")
                 )
-                conn.commit()
                 print("💡 PostgreSQL 初始化成功：已成功创建安全的默认账号 admin / 123456")
 
+            conn.commit()
             cursor.close()
             conn.close()
             break

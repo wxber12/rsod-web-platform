@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth import router as auth_router
-from app.api.inference import router as inference_router
 from app.api.detection import router as detection_router # 导入 detection.py 中的 router
 from app.api.ai import router as ai_router
+from app.api.history import router as history_router
 import os
 from app.utils.paths import Paths
 # 在应用启动时自动检查并创建必要的目录结构
@@ -27,9 +27,9 @@ app.add_middleware(
 
 # 挂载路由，前缀会自动拼接 (例如: /api/auth/login)
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-app.include_router(inference_router, prefix="/api/inference", tags=["inference"])
 app.include_router(detection_router, prefix="/api", tags=["detection"])
 app.include_router(ai_router, prefix="/api", tags=["ai"])
+app.include_router(history_router, prefix="/api", tags=["history"])
 
 if __name__ == "__main__":
     import uvicorn

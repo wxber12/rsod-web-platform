@@ -10,6 +10,7 @@ from ultralytics import YOLO
 from app.config import settings
 from app.models.schemas import DetectionBox, DetectionResult, VideoDetectionResult
 from app.utils.file_utils import get_file_url
+from database import get_db_connection
 from app.utils.paths import Paths  # 核心：使用统一的路径管理类
 
 class DetectionService:
@@ -78,7 +79,7 @@ class DetectionService:
         annotated_image = results[0].plot()
         cv2.imwrite(str(result_path), annotated_image)
 
-        return DetectionResult(
+        res = DetectionResult(
             detection_id=detection_id,
             image_url=get_file_url(Path(image_path).name, settings.UPLOAD_DIR),
             result_image_url=get_file_url(result_filename, settings.RESULT_DIR),
@@ -88,6 +89,20 @@ class DetectionService:
             model_name=model_name,
             created_at=datetime.now()
         )
+
+        # 保存历史记录
+        self.save_history(
+            user_id=None,
+            detection_id=res.detection_id,
+            type="single",
+            original_url=res.image_url,
+            result_url=res.result_image_url,
+            total_objects=res.total_objects,
+            detection_time=res.detection_time,
+            model_name=res.model_name
+        )
+
+        return res
 
     def detect_batch_images(self, image_paths: List[str], model_name: str = "best") -> List[DetectionResult]:
         """批量检测多张图片"""
@@ -153,7 +168,7 @@ class DetectionService:
         cap.release()
         out.release()
 
-        return VideoDetectionResult(
+        res = VideoDetectionResult(
             detection_id=detection_id,
             video_url=get_file_url(Path(video_path).name, settings.UPLOAD_DIR),
             result_video_url=get_file_url(result_filename, settings.RESULT_DIR),
@@ -162,6 +177,37 @@ class DetectionService:
             model_name=model_name,
             created_at=datetime.now()
         )
+        
+        # 保存历史记录
+        self.save_history(
+            user_id=None, # 后续从 API 层传入
+            detection_id=res.detection_id,
+            type="video",
+            original_url=res.video_url,
+            result_url=res.result_video_url,
+            total_objects=0, # 视频暂不统计总数
+            detection_time=res.detection_time,
+            model_name=res.model_name
+        )
+        
+        return res
+
+    def save_history(self, user_id, detection_id, type, original_url, result_url, total_objects, detection_time, model_name):
+        """保存检测历史到数据库"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO detection_history 
+                (user_id, detection_id, type, original_url, result_url, total_objects, detection_time, model_name)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (user_id, detection_id, type, original_url, result_url, total_objects, detection_time, model_name))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print(f"✅ 历史记录已保存: {detection_id}")
+        except Exception as e:
+            print(f"❌ 历史记录保存失败: {e}")
 
 # 单例模式导出服务对象
 detection_service = DetectionService()

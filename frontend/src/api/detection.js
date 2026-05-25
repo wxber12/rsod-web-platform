@@ -39,7 +39,7 @@ export const detectVideo = (data) => {
 // 获取检测历史
 export const getDetectionHistory = (params) => {
   return request({
-    url: '/detection/history',
+    url: '/history/',
     method: 'get',
     params
   })
@@ -48,7 +48,7 @@ export const getDetectionHistory = (params) => {
 // 获取检测详情
 export const getDetectionDetail = (id) => {
   return request({
-    url: `/detection/detail/${id}`,
+    url: `/history/${id}`,
     method: 'get'
   })
 }

@@ -6,6 +6,8 @@ from app.utils.file_utils import save_upload_file, ensure_directories
 from app.config import settings
 from app.models.schemas import SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, HistoryResponse, TargetListResponse, TargetItem
 from datetime import datetime
+from database import get_db_connection
+from psycopg2.extras import RealDictCursor
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 
@@ -76,14 +78,13 @@ async def detect_video(
 
 
 @router.get("/targets/list", response_model=TargetListResponse)
-async def get_target_list():
+async def get_targets():
+    """获取目标库列表"""
     targets = [
-        TargetItem(id=0, name="airplane", chinese_name="飞机", description="固定翼飞机、直升机等"),
-        TargetItem(id=1, name="oil_tank", chinese_name="油罐", description="储油罐、化工罐等"),
-        TargetItem(id=2, name="playground", chinese_name="操场", description="运动场、操场等"),
-        TargetItem(id=3, name="building", chinese_name="建筑物", description="各类建筑物"),
-        TargetItem(id=4, name="ship", chinese_name="船舶", description="各类船舶"),
-        TargetItem(id=5, name="pest", chinese_name="农业虫害", description="农作物病虫害"),
+        {"id": 1, "name": "飞机", "count": 1250, "icon": "Plane"},
+        {"id": 2, "name": "油罐", "count": 840, "icon": "Oiltank"},
+        {"id": 3, "name": "立交桥", "count": 420, "icon": "Overpass"},
+        {"id": 4, "name": "操场", "count": 310, "icon": "Playground"}
     ]
     return TargetListResponse(
         success=True,
