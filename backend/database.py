@@ -35,6 +35,7 @@ def init_db():
                     password VARCHAR(255) NOT NULL,
                     email VARCHAR(100) UNIQUE,
                     role VARCHAR(20) DEFAULT 'user',
+                    avatar TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
@@ -53,6 +54,16 @@ def init_db():
                     model_name VARCHAR(50),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+            """)
+
+            # 3. 动态升级表结构：添加 avatar 字段（如果不存在）
+            cursor.execute("""
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar') THEN
+                        ALTER TABLE users ADD COLUMN avatar TEXT;
+                    END IF;
+                END $$;
             """)
 
             # 2. 检查是否已经存在 admin 账号

@@ -189,7 +189,7 @@
           <div class="diagnosis-content">
             <p v-if="isDetecting">正在分析中...</p>
             <p v-else-if="detectionResult && activeTab === 'video'">
-              视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧。您可以播放右侧结果视频查看识别动态。
+              视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧，累计识别目标 {{ detectionResult.total_objects }} 次。您可以播放右侧结果视频查看识别动态。
             </p>
             <p v-else-if="detectionResult && detectionResult.total_objects > 0">
               图像中检测到 {{ detectionResult.total_objects }} 个目标实体，已标记在右侧结果图中，请仔细核对。
@@ -366,8 +366,8 @@ const handleFileChange = async (event, tabKey) => {
         originalVideo.value = getFullUrl(data.video_url);
         detectionResult.value = {
           ...data,
-          boxes: [], // 视频检测通常不返回所有框，或者只返回统计
-          total_objects: data.total_frames > 0 ? "已处理" : 0 // 简单展示
+          boxes: [], 
+          total_objects: data.total_objects || 0
         };
       }
     } else {

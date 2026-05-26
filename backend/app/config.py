@@ -33,6 +33,13 @@ class Settings(BaseModel):
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "cbspquvlxkpbjffe")
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "RSOD Platform")
 
+    # MinIO Settings
+    MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+    MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+    MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+    MINIO_SECURE: bool = os.getenv("MINIO_SECURE", "False").lower() == "true"
+    MINIO_BUCKET_NAME: str = os.getenv("MINIO_BUCKET_NAME", "rsod-platform")
+
 
 def get_settings() -> Settings:
     settings = Settings()
@@ -43,12 +50,20 @@ def get_settings() -> Settings:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):
-                    key, value = line.split("=", 1)
-                    if hasattr(settings, key):
-                        try:
-                            setattr(settings, key, type(getattr(settings, key))(value))
-                        except ValueError:
-                            pass
+                    try:
+                        key, value = line.split("=", 1)
+                        # 兼容不同命名的环境变量
+                        if key == "MINIO_BUCKET":
+                            key = "MINIO_BUCKET_NAME"
+                            
+                        if hasattr(settings, key):
+                            current_val = getattr(settings, key)
+                            if isinstance(current_val, bool):
+                                setattr(settings, key, value.lower() == "true")
+                            else:
+                                setattr(settings, key, type(current_val)(value))
+                    except (ValueError, IndexError):
+                        pass
 
     return settings
 

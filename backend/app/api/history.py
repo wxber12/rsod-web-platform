@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query
+from app.api.profile import get_current_user
+from fastapi import APIRouter, HTTPException, Query, Depends
 from database import get_db_connection
 from psycopg2.extras import RealDictCursor
 from app.models.schemas import HistoryResponse, HistoryDetailResponse
@@ -6,8 +7,12 @@ from app.models.schemas import HistoryResponse, HistoryDetailResponse
 router = APIRouter(prefix="/history", tags=["history"])
 
 @router.get("/", response_model=HistoryResponse)
-async def get_history(limit: int = Query(20), offset: int = Query(0)):
-    """获取检测历史记录"""
+async def get_history(
+    limit: int = Query(20), 
+    offset: int = Query(0),
+    current_user: dict = Depends(get_current_user)
+):
+    """获取当前用户的检测历史记录"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -16,9 +21,10 @@ async def get_history(limit: int = Query(20), offset: int = Query(0)):
             SELECT detection_id, type, original_url as image_url, result_url as result_image_url, 
                    total_objects, detection_time, model_name, created_at
             FROM detection_history 
+            WHERE user_id = %s
             ORDER BY created_at DESC 
             LIMIT %s OFFSET %s
-        """, (limit, offset))
+        """, (current_user["user_id"], limit, offset))
         
         history = cursor.fetchall()
         cursor.close()
@@ -34,8 +40,11 @@ async def get_history(limit: int = Query(20), offset: int = Query(0)):
 
 
 @router.get("/{detection_id}", response_model=HistoryDetailResponse)
-async def get_history_detail(detection_id: str):
-    """获取指定检测详情"""
+async def get_history_detail(
+    detection_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """获取当前用户的指定检测详情"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -44,8 +53,8 @@ async def get_history_detail(detection_id: str):
             SELECT detection_id, type, original_url as image_url, result_url as result_image_url, 
                    total_objects, detection_time, model_name, created_at
             FROM detection_history 
-            WHERE detection_id = %s
-        """, (detection_id,))
+            WHERE detection_id = %s AND user_id = %s
+        """, (detection_id, current_user["user_id"]))
         
         detail = cursor.fetchone()
         cursor.close()

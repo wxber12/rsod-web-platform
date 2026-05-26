@@ -1,13 +1,11 @@
 import os
 from typing import List
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from app.api.profile import get_current_user
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
 from app.config import settings
-from app.models.schemas import SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, HistoryResponse, TargetListResponse, TargetItem
-from datetime import datetime
-from database import get_db_connection
-from psycopg2.extras import RealDictCursor
+from app.models.schemas import SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, TargetListResponse
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 
@@ -17,13 +15,14 @@ ensure_directories()
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
         file: UploadFile = File(...),
-        model_name: str = Form("pest-v1")
+        model_name: str = Form("pest-v1"),
+        current_user: dict = Depends(get_current_user)
 ):
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
 
-        result = detection_service.detect_single_image(image_path, model_name)
+        result = detection_service.detect_single_image(image_path, model_name, user_id=current_user["user_id"])
 
         return SingleDetectionResponse(
             success=True,
@@ -37,7 +36,8 @@ async def detect_single_image(
 @router.post("/batch", response_model=BatchDetectionResponse)
 async def detect_batch(
         files: List[UploadFile] = File(...),
-        model_name: str = Form("best")
+        model_name: str = Form("best"),
+        current_user: dict = Depends(get_current_user)
 ):
     try:
         image_paths = []
@@ -46,7 +46,7 @@ async def detect_batch(
             image_path = os.path.join(settings.UPLOAD_DIR, filename)
             image_paths.append(image_path)
 
-        results = detection_service.detect_batch_images(image_paths, model_name)
+        results = detection_service.detect_batch_images(image_paths, model_name, user_id=current_user["user_id"])
 
         return BatchDetectionResponse(
             success=True,
@@ -60,13 +60,14 @@ async def detect_batch(
 @router.post("/video", response_model=VideoDetectionResponse)
 async def detect_video(
         file: UploadFile = File(...),
-        model_name: str = Form("best")
+        model_name: str = Form("best"),
+        current_user: dict = Depends(get_current_user)
 ):
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         video_path = os.path.join(settings.UPLOAD_DIR, filename)
 
-        result = detection_service.detect_video(video_path, model_name)
+        result = detection_service.detect_video(video_path, model_name, user_id=current_user["user_id"])
 
         return VideoDetectionResponse(
             success=True,

@@ -9,6 +9,12 @@ const service = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   config => {
+    // 🌟 核心：从 localStorage 中读取 token
+    const token = localStorage.getItem("token")
+    if (token) {
+      // 自动为所有请求挂载 Bearer 身份令牌
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
     return config
   },
   error => {
