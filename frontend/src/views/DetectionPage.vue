@@ -15,8 +15,13 @@
 
     <!-- 模型选择器 -->
     <div class="model-selector">
-      <el-select v-model="selectedModel" style="width: 180px">
-        <el-option label="我的模型" value="best" />
+      <el-select v-model="selectedModel" style="width: 200px" placeholder="选择检测模型">
+        <el-option
+          v-for="model in availableModels"
+          :key="model.name"
+          :label="model.name"
+          :value="model.name"
+        />
       </el-select>
     </div>
 
@@ -153,8 +158,10 @@
             <span class="info-value">{{ selectedModel }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">模型版本</span>
-            <span class="info-value">v1.0.0</span>
+            <span class="info-label">检测类别</span>
+            <el-tooltip :content="currentModelClassesFull" placement="top" :show-after="300" popper-class="classes-tooltip">
+              <span class="info-value classes-value">{{ currentModelClasses }}</span>
+            </el-tooltip>
           </div>
         </div>
 
@@ -214,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   Picture,
   Plus,
@@ -230,9 +237,21 @@ import {
   Loading // 添加 Loading icon
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { detectSingleImage, detectBatchImages, detectVideo } from "../api/detection"; // 引入检测 API
+import { detectSingleImage, detectBatchImages, detectVideo, getAvailableModels } from "../api/detection"; // 引入检测 API
 
-const selectedModel = ref("best");
+const availableModels = ref([]);
+const selectedModel = ref("");
+const currentModelClassesFull = computed(() => {
+  const model = availableModels.value.find(m => m.name === selectedModel.value);
+  return model?.classes?.join(" / ") || "-";
+});
+const currentModelClasses = computed(() => {
+  const model = availableModels.value.find(m => m.name === selectedModel.value);
+  const classes = model?.classes || [];
+  if (classes.length === 0) return "-";
+  if (classes.length <= 4) return classes.join(" / ");
+  return `${classes[0]} / ${classes[1]} / ... 等 ${classes.length} 类`;
+});
 const activeTab = ref("single");
 const compareMode = ref("side");
 const isDetecting = ref(false); // 检测状态
@@ -413,6 +432,21 @@ const selectBatchItem = (item) => {
   resultImage.value = item.result_image_url;
   detectionResult.value = item;
 };
+
+// 获取可用模型列表
+onMounted(async () => {
+  try {
+    const res = await getAvailableModels();
+    if (res.success) {
+      availableModels.value = res.data;
+      if (res.data.length > 0 && !selectedModel.value) {
+        selectedModel.value = res.data[0].name;
+      }
+    }
+  } catch (e) {
+    console.error("获取模型列表失败:", e);
+  }
+});
 </script>
 
 <style scoped>
@@ -737,6 +771,11 @@ const selectBatchItem = (item) => {
   color: var(--text-primary);
 }
 
+.classes-value {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--text-secondary);
+}
+
 .result-card {
   background-color: #ffffff;
   border-radius: 12px;
@@ -852,5 +891,12 @@ const selectBatchItem = (item) => {
   border-radius: 8px;
   padding: 10px;
   font-size: 14px;
+}
+</style>
+
+<style>
+.classes-tooltip {
+  max-width: 360px !important;
+  word-break: break-all;
 }
 </style>

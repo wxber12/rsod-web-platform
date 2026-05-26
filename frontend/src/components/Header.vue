@@ -7,11 +7,6 @@
     </div>
 
     <div class="header-actions">
-      <el-tag type="success" effect="light" class="status-tag">
-        <el-icon class="el-icon--left"><Check /></el-icon>
-        检测完成
-      </el-tag>
-
       <div class="action-icons">
         <el-icon class="action-icon"><Grid /></el-icon>
         <el-icon class="action-icon"><Bell /></el-icon>

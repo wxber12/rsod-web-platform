@@ -101,18 +101,12 @@ def start_docker_services():
 
 def find_python_interpreter():
     """寻找合适的 Python 解释器，确保使用 rsod-web Conda 环境"""
-    # 1. 检查固定的 Miniconda 默认环境路径
-    fixed_conda_path = r"C:\Users\Joe\miniconda3\envs\rsod-web\python.exe"
-    if os.path.exists(fixed_conda_path):
-        log_system(f"检测到指定的 Conda 环境 Python 解释器: {fixed_conda_path}")
-        return fixed_conda_path
-        
-    # 2. 检查当前运行此脚本的 Python 是否已是虚拟环境
+    # 1. 检查当前运行此脚本的 Python 是否已是虚拟环境
     if "rsod-web" in sys.prefix or os.environ.get("CONDA_DEFAULT_ENV") == "rsod-web":
         log_system(f"当前脚本运行在 rsod-web 虚拟环境中，使用: {sys.executable}")
         return sys.executable
-        
-    # 3. 检查系统 path 中是否有 conda 命令，尝试使用 conda run
+
+    # 2. 检查系统 path 中是否有 conda 命令，尝试使用 conda run
     try:
         result = subprocess.run(["conda", "env", "list"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="ignore")
         if "rsod-web" in result.stdout:
@@ -120,8 +114,8 @@ def find_python_interpreter():
             return "conda_run"
     except FileNotFoundError:
         pass
-        
-    # 4. 保底方案，使用当前系统默认 python
+
+    # 3. 保底方案，使用当前系统默认 python
     log_warn(f"未检测到 rsod-web 虚拟环境，使用当前系统默认解释器: {sys.executable}")
     return sys.executable
 
