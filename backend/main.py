@@ -6,6 +6,7 @@ from app.api.detection import router as detection_router # 导入 detection.py �
 from app.api.ai import router as ai_router
 from app.api.history import router as history_router
 from app.api.profile import router as profile_router
+from app.api.camera import router as camera_router
 import os
 from app.utils.paths import Paths
 # 在应用启动时自动检查并创建必要的目录结构
@@ -32,6 +33,7 @@ app.include_router(detection_router, prefix="/api", tags=["detection"])
 app.include_router(ai_router, prefix="/api", tags=["ai"])
 app.include_router(history_router, prefix="/api", tags=["history"])
 app.include_router(profile_router, prefix="/api", tags=["profile"])
+app.include_router(camera_router, prefix="/api", tags=["camera"])
 
 if __name__ == "__main__":
     import uvicorn

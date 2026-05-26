@@ -31,6 +31,7 @@
         @click="handleTabClick(tab.key)"
       >
         <input
+          v-if="tab.key !== 'camera'"
           type="file"
           :accept="tab.accept"
           :multiple="tab.multiple"
@@ -85,8 +86,13 @@
           </el-button>
         </div>
 
+        <!-- 摄像头检测区域 -->
+        <div v-if="activeTab === 'camera'" class="camera-section">
+          <CameraDetection />
+        </div>
+
         <!-- 图片对比区域 -->
-        <div class="image-compare">
+        <div v-else class="image-compare">
           <div class="image-card">
             <video
               v-if="originalVideo"
@@ -227,8 +233,11 @@ import {
   ChatDotRound,
   Refresh,
   Minus,
-  Loading // 添加 Loading icon
+  Loading,
+  VideoPlay,
+  VideoCamera
 } from "@element-plus/icons-vue";
+import CameraDetection from "../components/CameraDetection.vue";
 import { ElMessage } from "element-plus";
 import { detectSingleImage, detectBatchImages, detectVideo } from "../api/detection"; // 引入检测 API
 
@@ -274,9 +283,17 @@ const functionTabs = [
   {
     key: "video",
     name: "视频检测",
-    desc: "上传视频自动分析",
-    icon: Monitor,
+    desc: "识别视频动态目标",
+    icon: VideoPlay,
     accept: "video/*",
+    multiple: false,
+  },
+  {
+    key: "camera",
+    name: "摄像头",
+    desc: "开启实时监控检测",
+    icon: VideoCamera,
+    accept: "",
     multiple: false,
   },
 ];
@@ -573,6 +590,10 @@ const selectBatchItem = (item) => {
 }
 
 /* 图片对比区域 */
+.camera-section {
+  margin-top: 24px;
+}
+
 .image-compare {
   display: flex;
   gap: 16px;

@@ -227,5 +227,15 @@ class DetectionService:
         except Exception as e:
             print(f"❌ 历史记录保存失败: {e}")
 
+    def get_class_chinese_name(self, class_name: str) -> str:
+        """获取类别的中文名称"""
+        mapping = {
+            "aircraft": "飞机",
+            "oiltank": "油罐",
+            "overpass": "立交桥",
+            "playground": "操场"
+        }
+        return mapping.get(class_name.lower(), class_name)
+
 # 单例模式导出服务对象
 detection_service = DetectionService()
