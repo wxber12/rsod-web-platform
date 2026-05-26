@@ -20,6 +20,7 @@
             v-model="registerForm.username"
             placeholder="请输入用户名"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><User /></el-icon>
@@ -33,6 +34,7 @@
             type="email"
             placeholder="请输入邮箱"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><Message /></el-icon>
@@ -46,6 +48,7 @@
             type="password"
             placeholder="请输入密码"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><Lock /></el-icon>
@@ -59,6 +62,7 @@
             type="password"
             placeholder="请确认密码"
             size="large"
+            @keyup.enter="handleRegister"
           >
             <template #prefix>
               <el-icon><Lock /></el-icon>
@@ -93,8 +97,12 @@
 import { ref, reactive } from "vue";
 import { UserFilled, User, Message, Lock } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus"; // 🌟 引入弹窗提示
+import { register } from "../api/auth";    // 🌟 引入刚刚编写的真实注册 API
 
 const router = useRouter();
+const loading = ref(false); // 🌟 注册按钮的加载控制动画
+const registerFormRef = ref(null);
 
 const registerForm = reactive({
   username: "",
@@ -104,6 +112,7 @@ const registerForm = reactive({
   agree: false,
 });
 
+// 你原本写的非常严谨完善的表单校验规则，保持不变
 const registerRules = {
   username: [
     { required: true, message: "请输入用户名", trigger: "blur" },
@@ -132,28 +141,51 @@ const registerRules = {
       trigger: "blur",
     },
   ],
-  agree: [
-    {
-      validator: (rule, value, callback) => {
-        if (!value) {
-          callback(new Error("请同意服务条款和隐私政策"));
-        } else {
-          callback();
-        }
-      },
-      trigger: "change",
-    },
-  ],
 };
 
-const registerFormRef = ref(null);
-
+// 🌟 升级为真实的 async/await 注册对接逻辑
 const handleRegister = () => {
-  registerFormRef.value.validate((valid) => {
+  // 1. 优先检查是否勾选了同意协议 (弹窗提醒)
+  if (!registerForm.agree) {
+    ElMessage.warning("请先阅读并勾选同意服务条款和隐私政策！");
+    return;
+  }
+
+  registerFormRef.value.validate(async (valid) => {
     if (valid) {
-      console.log("注册请求:", registerForm);
-      localStorage.setItem("token", "mock-token");
-      router.push("/detection");
+      loading.value = true;
+      try {
+        // 向 FastAPI 发送注册数据，只剥离出后端需要的字段
+        const res = await register({
+          username: registerForm.username,
+          password: registerForm.password,
+          email: registerForm.email // 🌟 将邮箱字段发送给后端
+        });
+
+        // 兼容 request.js 拦截器剥皮与不剥皮格式
+        if (res.code === 200 || (res.data && res.data.code === 200)) {
+          const responseData = res.code === 200 ? res : res.data;
+
+          ElMessage.success(responseData.message || "注册成功！即将为您跳转到登录页...");
+
+          // 优雅等待 1.5 秒，让用户看清成功提示后，自动路由切回登录页面
+          setTimeout(() => {
+            router.push("/login");
+          }, 1500);
+        } else {
+          const errorMsg = res.message || res.data?.message || "注册失败";
+          ElMessage.error(errorMsg);
+        }
+      } catch (error) {
+        console.error("注册网络对接异常:", error);
+        if (error.response && error.response.data) {
+          ElMessage.error(error.response.data.message || "注册申请被拒绝");
+        } else {
+          ElMessage.error("无法连接到后端服务器，请确认 FastAPI 容器已启动！");
+        }
+      } finally {
+        loading.value = false; // 解冻按钮状态
+      }
     }
   });
 };

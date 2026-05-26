@@ -12,10 +12,34 @@ export const detectSingleImage = (data) => {
   })
 }
 
+// 批量检测接口
+export const detectBatchImages = (data) => {
+  return request({
+    url: '/detection/batch',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 视频检测接口
+export const detectVideo = (data) => {
+  return request({
+    url: '/detection/video',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
 // 获取检测历史
 export const getDetectionHistory = (params) => {
   return request({
-    url: '/detection/history',
+    url: '/history/',
     method: 'get',
     params
   })
@@ -24,7 +48,7 @@ export const getDetectionHistory = (params) => {
 // 获取检测详情
 export const getDetectionDetail = (id) => {
   return request({
-    url: `/detection/detail/${id}`,
+    url: `/history/${id}`,
     method: 'get'
   })
 }

@@ -45,6 +45,11 @@ const routes = [
     name: "个人中心",
     component: () => import("../views/ProfilePage.vue"),
   },
+  {
+    path: "/reset-password",
+    name: "重置密码",
+    component: () => import("../views/ResetPasswordPage.vue"),
+  },
 ];
 
 const router = createRouter({
@@ -54,7 +59,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token");
-  const authPaths = ["/login", "/register", "/forgot-password"];
+  const authPaths = ["/login", "/register", "/forgot-password" ,"/reset-password"];
 
   if (authPaths.includes(to.path)) {
     next();

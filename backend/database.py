@@ -6,9 +6,9 @@ import time
 # 数据库连接配置 (对应你 Docker 中的 postgres 容器端口 5432)
 DB_CONFIG = {
     "host": "localhost",  # 如果在宿主机跑代码填 localhost，如果后端也进 Docker 填 postgres
-    "database": "postgres",  # 默认数据库名
-    "user": "postgres",  # 默认用户名
-    "password": "postgres",  # 👈 请根据你创建 postgres 容器时设置的密码修改
+    "database": "my_db",  # 默认数据库名
+    "user": "my_user",  # 默认用户名
+    "password": "123456",  # 👈 请根据你创建 postgres 容器时设置的密码修改
     "port": "5432"
 }
 
@@ -33,9 +33,37 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     username VARCHAR(50) NOT NULL UNIQUE,
                     password VARCHAR(255) NOT NULL,
+                    email VARCHAR(100) UNIQUE,
                     role VARCHAR(20) DEFAULT 'user',
+                    avatar TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+            """)
+
+            # 2. 创建检测历史记录表
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS detection_history (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER REFERENCES users(id),
+                    detection_id VARCHAR(100) NOT NULL,
+                    type VARCHAR(20) NOT NULL, -- single, batch, video
+                    original_url TEXT NOT NULL,
+                    result_url TEXT NOT NULL,
+                    total_objects INTEGER DEFAULT 0,
+                    detection_time FLOAT DEFAULT 0.0,
+                    model_name VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            # 3. 动态升级表结构：添加 avatar 字段（如果不存在）
+            cursor.execute("""
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar') THEN
+                        ALTER TABLE users ADD COLUMN avatar TEXT;
+                    END IF;
+                END $$;
             """)
 
             # 2. 检查是否已经存在 admin 账号
@@ -46,12 +74,12 @@ def init_db():
                 hashed_password = bcrypt.hashpw("123456".encode('utf-8'), salt).decode('utf-8')
 
                 cursor.execute(
-                    "INSERT INTO users (username, password, role) VALUES (%s, %s, %s);",
-                    ("admin", hashed_password, "admin")
+                    "INSERT INTO users (username, password, email, role) VALUES (%s, %s, %s, %s);",
+                    ("admin", hashed_password, "admin@example.com", "admin")
                 )
-                conn.commit()
                 print("💡 PostgreSQL 初始化成功：已成功创建安全的默认账号 admin / 123456")
 
+            conn.commit()
             cursor.close()
             conn.close()
             break

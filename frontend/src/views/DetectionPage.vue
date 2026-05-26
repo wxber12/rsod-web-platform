@@ -16,8 +16,7 @@
     <!-- 模型选择器 -->
     <div class="model-selector">
       <el-select v-model="selectedModel" style="width: 180px">
-        <el-option label="pest-v1" value="pest-v1" />
-        <el-option label="pest-v2" value="pest-v2" />
+        <el-option label="我的模型" value="best" />
       </el-select>
     </div>
 
@@ -35,6 +34,8 @@
           type="file"
           :accept="tab.accept"
           :multiple="tab.multiple"
+          :webkitdirectory="tab.webkitdirectory"
+          :directory="tab.webkitdirectory"
           class="file-input"
           @change="handleFileChange($event, tab.key)"
           @click.stop
@@ -54,9 +55,13 @@
       <div class="left-panel">
         <div class="panel-header">
           <span class="panel-title">检测预览</span>
-          <el-tag type="success" effect="light" class="result-tag">
+          <el-tag v-if="isDetecting" type="warning" effect="light" class="result-tag">
+            <el-icon class="el-icon--left is-loading"><Loading /></el-icon>
+            正在检测...
+          </el-tag>
+          <el-tag v-else-if="detectionResult" type="success" effect="light" class="result-tag">
             <el-icon class="el-icon--left"><Check /></el-icon>
-            检测完成
+            检测完成 (耗时: {{ detectionResult.detection_time }}s)
           </el-tag>
         </div>
 
@@ -83,21 +88,58 @@
         <!-- 图片对比区域 -->
         <div class="image-compare">
           <div class="image-card">
+            <video
+              v-if="originalVideo"
+              :src="originalVideo"
+              controls
+              class="compare-image"
+            />
             <img
-              src="../assets/images/bus.jpg"
+              v-else-if="originalImage"
+              :src="originalImage"
               alt="原始图片"
               class="compare-image"
             />
-            <div class="image-label">原始图片</div>
+            <div v-else class="image-placeholder">请上传图片/视频</div>
+            <div class="image-label">原始{{ activeTab === 'video' ? '视频' : '图片' }}</div>
           </div>
-          <div class="image-card">
+          <div class="image-card" v-loading="isDetecting" element-loading-text="AI正在疯狂识别中...">
+            <video
+              v-if="resultVideo"
+              :src="resultVideo"
+              controls
+              class="compare-image"
+            />
             <img
-              src="../assets/images/predict-bus.png"
+              v-else-if="resultImage"
+              :src="resultImage"
               alt="检测结果"
               class="compare-image"
             />
+            <div v-else class="image-placeholder">等待检测...</div>
             <div class="image-label">检测结果</div>
-            <div class="detection-mark"></div>
+            <div v-if="detectionResult" class="detection-mark"></div>
+          </div>
+        </div>
+
+        <!-- 批量结果列表 -->
+        <div v-if="batchResults.length > 0" class="batch-gallery">
+          <div class="gallery-header">
+            <span class="gallery-title">批量结果 ({{ batchResults.length }})</span>
+          </div>
+          <div class="gallery-scroll">
+            <div 
+              v-for="(item, index) in batchResults" 
+              :key="index" 
+              class="gallery-item"
+              :class="{ active: detectionResult && detectionResult.detection_id === item.detection_id }"
+              @click="selectBatchItem(item)"
+            >
+              <img :src="item.result_image_url" class="gallery-image" />
+              <div class="gallery-info">
+                <span class="item-count">{{ item.total_objects }} 目标</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -122,10 +164,19 @@
             <el-icon><List /></el-icon>
             <span class="card-title">识别清单</span>
           </div>
-          <div class="empty-state">
+          
+          <div v-if="detectionResult && detectionResult.boxes && detectionResult.boxes.length > 0" class="detection-list">
+            <div v-for="(box, index) in detectionResult.boxes" :key="index" class="detection-item">
+              <span class="item-name">{{ box.class_name }}</span>
+              <span class="item-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
+            </div>
+            <div class="total-count">共检测到 {{ detectionResult.total_objects }} 个目标</div>
+          </div>
+          
+          <div v-else class="empty-state">
             <el-icon class="empty-icon"><CircleCheck /></el-icon>
             <p class="empty-text">未检测到目标</p>
-            <p class="empty-desc">影像无异常目标</p>
+            <p class="empty-desc">影像无异常目标或未开始检测</p>
           </div>
         </div>
 
@@ -136,7 +187,14 @@
             <span class="card-title">AI 诊断建议</span>
           </div>
           <div class="diagnosis-content">
-            <p>未检测到指定目标</p>
+            <p v-if="isDetecting">正在分析中...</p>
+            <p v-else-if="detectionResult && activeTab === 'video'">
+              视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧，累计识别目标 {{ detectionResult.total_objects }} 次。您可以播放右侧结果视频查看识别动态。
+            </p>
+            <p v-else-if="detectionResult && detectionResult.total_objects > 0">
+              图像中检测到 {{ detectionResult.total_objects }} 个目标实体，已标记在右侧结果图中，请仔细核对。
+            </p>
+            <p v-else>暂无诊断建议，请先上传并检测图片或视频。</p>
           </div>
         </div>
 
@@ -169,11 +227,23 @@ import {
   ChatDotRound,
   Refresh,
   Minus,
+  Loading // 添加 Loading icon
 } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import { detectSingleImage, detectBatchImages, detectVideo } from "../api/detection"; // 引入检测 API
 
-const selectedModel = ref("pest-v1");
+const selectedModel = ref("best");
 const activeTab = ref("single");
 const compareMode = ref("side");
+const isDetecting = ref(false); // 检测状态
+
+// 响应数据
+const originalImage = ref(""); 
+const resultImage = ref("");
+const originalVideo = ref("");
+const resultVideo = ref("");
+const detectionResult = ref(null);
+const batchResults = ref([]); // 批量检测结果集
 
 const functionTabs = [
   {
@@ -199,6 +269,7 @@ const functionTabs = [
     icon: Folder,
     accept: "image/*",
     multiple: true,
+    webkitdirectory: true, // 👈 标记该选项卡需要文件夹选择
   },
   {
     key: "video",
@@ -220,18 +291,127 @@ const handleTabClick = (key) => {
   }
 };
 
-const handleFileChange = (event, tabKey) => {
+const handleFileChange = async (event, tabKey) => {
   event.stopPropagation();
   event.preventDefault();
-  const files = event.target.files;
-  if (files && files.length > 0) {
-    console.log(`上传文件类型: ${tabKey}`);
-    console.log('文件:', files);
-    // 这里可以添加检测逻辑
+  let files = Array.from(event.target.files);
+  if (!files || files.length === 0) return;
+
+  // 过滤掉非影像文件（尤其是文件夹上传时可能带入的系统文件）
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.webp'];
+  const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv'];
+  
+  if (tabKey === 'video') {
+    files = files.filter(f => videoExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
+  } else {
+    files = files.filter(f => imageExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
   }
+
+  if (files.length === 0) {
+    ElMessage.warning("未检测到有效的影像文件，请检查上传内容。");
+    return;
+  }
+
+  activeTab.value = tabKey;
+  isDetecting.value = true;
+  
+  // 初始化预览
+  if (tabKey === 'single') {
+    originalImage.value = URL.createObjectURL(files[0]);
+    resultImage.value = "";
+    originalVideo.value = "";
+    resultVideo.value = "";
+    detectionResult.value = null;
+  } else if (tabKey === 'video') {
+    originalVideo.value = URL.createObjectURL(files[0]);
+    resultVideo.value = "";
+    originalImage.value = "";
+    resultImage.value = "";
+    detectionResult.value = null;
+  } else {
+    batchResults.value = [];
+  }
+
+  try {
+    const baseURL = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace('/api', '') : 'http://localhost:8000';
+    const getFullUrl = (url) => {
+      if (!url) return "";
+      if (url.startsWith("http")) return url;
+      return baseURL + (url.startsWith("/") ? url : "/" + url);
+    };
+
+    if (tabKey === 'single') {
+      const formData = new FormData();
+      formData.append("file", files[0]);
+      formData.append("model_name", selectedModel.value);
+      
+      const res = await detectSingleImage(formData);
+      if (res.success || res.code === 200) {
+        ElMessage.success("检测成功！");
+        const data = res.data || res;
+        resultImage.value = getFullUrl(data.result_image_url || data.image_url); 
+        originalImage.value = getFullUrl(data.image_url) || originalImage.value;
+        detectionResult.value = data;
+      }
+    } else if (tabKey === 'video') {
+      const formData = new FormData();
+      formData.append("file", files[0]);
+      formData.append("model_name", selectedModel.value);
+      
+      const res = await detectVideo(formData);
+      if (res.success || res.code === 200) {
+        ElMessage.success("视频检测完成！");
+        const data = res.data || res;
+        resultVideo.value = getFullUrl(data.result_video_url);
+        originalVideo.value = getFullUrl(data.video_url);
+        detectionResult.value = {
+          ...data,
+          boxes: [], 
+          total_objects: data.total_objects || 0
+        };
+      }
+    } else {
+      // 批量检测
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+      }
+      formData.append("model_name", selectedModel.value);
+      
+      const res = await detectBatchImages(formData);
+      if (res.success || res.code === 200) {
+        ElMessage.success(`批量检测完成，共 ${res.data.length} 张图片`);
+        batchResults.value = res.data.map(item => ({
+          ...item,
+          image_url: getFullUrl(item.image_url),
+          result_image_url: getFullUrl(item.result_image_url)
+        }));
+        
+        // 默认选中第一张作为预览
+        if (batchResults.value.length > 0) {
+          const first = batchResults.value[0];
+          originalImage.value = first.image_url;
+          resultImage.value = first.result_image_url;
+          detectionResult.value = first;
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    ElMessage.error("检测请求失败，请检查后端服务是否正常。");
+  } finally {
+    isDetecting.value = false;
+  }
+  
   setTimeout(() => {
     event.target.value = '';
   }, 0);
+};
+
+const selectBatchItem = (item) => {
+  originalImage.value = item.image_url;
+  resultImage.value = item.result_image_url;
+  detectionResult.value = item;
 };
 </script>
 
@@ -444,6 +624,83 @@ const handleFileChange = (event, tabKey) => {
   font-weight: bold;
 }
 
+/* 批量图库样式 */
+.batch-gallery {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.gallery-header {
+  margin-bottom: 12px;
+}
+
+.gallery-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.gallery-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
+
+.gallery-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.gallery-scroll::-webkit-scrollbar-thumb {
+  background-color: #e5e7eb;
+  border-radius: 3px;
+}
+
+.gallery-item {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.gallery-item:hover {
+  transform: translateY(-2px);
+}
+
+.gallery-item.active {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.item-count {
+  color: white;
+  font-size: 10px;
+}
+
 /* 右侧面板 */
 .right-panel {
   width: 360px;
@@ -527,6 +784,49 @@ const handleFileChange = (event, tabKey) => {
 .empty-desc {
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background-color: #f3f4f6;
+}
+
+.detection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detection-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.item-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.item-conf {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.total-count {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
 }
 
 .diagnosis-content {
