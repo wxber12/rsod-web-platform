@@ -18,6 +18,7 @@ async def detect_single_image(
         model_name: str = Form("pest-v1"),
         current_user: dict = Depends(get_current_user)
 ):
+    image_path = None
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
@@ -31,6 +32,10 @@ async def detect_single_image(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
+    finally:
+        # 检测完成后清理本地临时上传文件
+        if image_path and os.path.exists(image_path):
+            os.remove(image_path)
 
 
 @router.post("/batch", response_model=BatchDetectionResponse)
@@ -39,8 +44,8 @@ async def detect_batch(
         model_name: str = Form("best"),
         current_user: dict = Depends(get_current_user)
 ):
+    image_paths = []
     try:
-        image_paths = []
         for file in files:
             filename = await save_upload_file(file, settings.UPLOAD_DIR)
             image_path = os.path.join(settings.UPLOAD_DIR, filename)
@@ -55,6 +60,11 @@ async def detect_batch(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"批量检测失败: {str(e)}")
+    finally:
+        # 清理所有批量上传的临时文件
+        for path in image_paths:
+            if os.path.exists(path):
+                os.remove(path)
 
 
 @router.post("/video", response_model=VideoDetectionResponse)
@@ -63,6 +73,7 @@ async def detect_video(
         model_name: str = Form("best"),
         current_user: dict = Depends(get_current_user)
 ):
+    video_path = None
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         video_path = os.path.join(settings.UPLOAD_DIR, filename)
@@ -76,6 +87,10 @@ async def detect_video(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"视频检测失败: {str(e)}")
+    finally:
+        # 检测完成后清理本地临时上传视频
+        if video_path and os.path.exists(video_path):
+            os.remove(video_path)
 
 
 @router.get("/targets/list", response_model=TargetListResponse)
