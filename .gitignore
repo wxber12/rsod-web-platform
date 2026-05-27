@@ -18,6 +18,8 @@ storage/
 *.pt
 *.pth
 *.onnx
+# 训练好的植物病害分类模型（需要共享给队友）
+!backend/models/plant_disease_best.pt
 # IDE配置
 .vscode/
 .idea/

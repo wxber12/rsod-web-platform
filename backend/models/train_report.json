@@ -1,0 +1,11 @@
+{
+  "model_name": "yolo11n-cls",
+  "trained_at": "2026-05-27 17:09:24",
+  "elapsed_seconds": 2916.1,
+  "dataset": "D:\\rsod-web-platform\\dataset",
+  "weights": "D:\\rsod-web-platform\\backend\\models\\plant_disease_best.pt",
+  "metrics": {
+    "top1_accuracy": 0.9972309470176697,
+    "top5_accuracy": 1.0
+  }
+}
