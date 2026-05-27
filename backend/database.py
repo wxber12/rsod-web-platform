@@ -2,14 +2,15 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import bcrypt
 import time
+import os
 
 # 数据库连接配置 (对应你 Docker 中的 postgres 容器端口 5432)
 DB_CONFIG = {
-    "host": "localhost",  # 如果在宿主机跑代码填 localhost，如果后端也进 Docker 填 postgres
-    "database": "my_db",  # 默认数据库名
-    "user": "my_user",  # 默认用户名
-    "password": "123456",  # 👈 请根据你创建 postgres 容器时设置的密码修改
-    "port": "5432"
+    "host": os.getenv("DB_HOST", "localhost"),  # 本地开发填 localhost，Docker 部署填 postgres
+    "database": os.getenv("DB_NAME", "my_db"),
+    "user": os.getenv("DB_USER", "my_user"),
+    "password": os.getenv("DB_PASSWORD", "123456"),
+    "port": os.getenv("DB_PORT", "5432")
 }
 
 

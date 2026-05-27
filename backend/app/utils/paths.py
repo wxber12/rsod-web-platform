@@ -43,8 +43,15 @@ class Paths:
 
     @classmethod
     def backend(cls):
-        """backend 目录"""
-        return cls.root() / "backend"
+        """backend 目录
+        如果 root 本身就是 backend（Docker 中 WORKDIR=/app），
+        则直接返回 root；否则拼接 'backend' 子目录。
+        """
+        root = cls.root()
+        # Docker 场景: backend/ 的内容直接在 root 下 (main.py 在 root 中)
+        if (root / "main.py").exists() and (root / "app").is_dir():
+            return root
+        return root / "backend"
 
     @classmethod
     def app(cls):

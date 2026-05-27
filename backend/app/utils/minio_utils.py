@@ -57,8 +57,9 @@ class MinioStorage:
         return self.get_url(object_name)
 
     def get_url(self, object_name: str):
-        """获取对象访问 URL"""
+        """获取对象访问 URL（浏览器端使用 PUBLIC_ENDPOINT）"""
+        endpoint = settings.MINIO_PUBLIC_ENDPOINT or settings.MINIO_ENDPOINT
         protocol = "https" if settings.MINIO_SECURE else "http"
-        return f"{protocol}://{settings.MINIO_ENDPOINT}/{self.bucket_name}/{object_name}"
+        return f"{protocol}://{endpoint}/{self.bucket_name}/{object_name}"
 
 storage = MinioStorage()
