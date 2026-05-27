@@ -16,25 +16,35 @@
         <el-icon class="action-icon"><Grid /></el-icon>
         <el-icon class="action-icon"><Bell /></el-icon>
         <el-icon class="action-icon"><QuestionFilled /></el-icon>
-        <div class="user-dropdown">
-          <el-avatar class="user-avatar" :size="32">
-            <img
-              src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
-              alt="用户头像"
-            />
-          </el-avatar>
-          <div class="user-info">
-            <div class="user-name">Lily</div>
-            <div class="user-role">普通用户</div>
+        <el-dropdown trigger="click" @command="handleCommand">
+          <div class="user-dropdown">
+            <el-avatar class="user-avatar" :size="32">
+              <img
+                :src="userInfo.avatar || defaultAvatar"
+                alt="用户头像"
+              />
+            </el-avatar>
+            <div class="user-info">
+              <div class="user-name">{{ userInfo.username || 'Lily' }}</div>
+              <div class="user-role">{{ userInfo.role === 'admin' ? '管理员' : '普通用户' }}</div>
+            </div>
+            <el-icon class="dropdown-icon"><CaretBottom /></el-icon>
           </div>
-          <el-icon class="dropdown-icon"><CaretBottom /></el-icon>
-        </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   Check,
   Grid,
@@ -43,6 +53,52 @@ import {
   CaretBottom,
   House,
 } from "@element-plus/icons-vue";
+import { ElMessageBox, ElMessage } from 'element-plus';
+import request from '../utils/request';
+
+const router = useRouter();
+const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png';
+const userInfo = ref({
+  username: '',
+  role: '',
+  avatar: ''
+});
+
+const fetchUserInfo = async () => {
+  try {
+    const res = await request.get('/profile/');
+    userInfo.value = res;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+};
+
+const handleCommand = (command) => {
+  if (command === 'logout') {
+    handleLogout();
+  } else if (command === 'profile') {
+    router.push('/profile');
+  }
+};
+
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出登录并切换账号吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    // 清除本地存储的 Token 和用户信息
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
+    ElMessage.success('已安全退出');
+    // 跳转回登录页
+    router.push('/login');
+  }).catch(() => {});
+};
+
+onMounted(() => {
+  fetchUserInfo();
+});
 </script>
 
 <style scoped>

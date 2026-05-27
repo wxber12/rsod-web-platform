@@ -233,7 +233,12 @@ class DetectionService:
             "aircraft": "飞机",
             "oiltank": "油罐",
             "overpass": "立交桥",
-            "playground": "操场"
+            "playground": "操场",
+            "car": "小汽车",
+            "truck": "卡车",
+            "vehicle": "车辆",
+            "ship": "船舶",
+            "building": "建筑物"
         }
         return mapping.get(class_name.lower(), class_name)
 

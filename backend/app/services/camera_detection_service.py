@@ -1,10 +1,15 @@
 import time
 import threading
 import logging
+import uuid
+import cv2
+import io
+from datetime import datetime
 from typing import Dict, Any, Optional
 import numpy as np
 from app.services.detection_service import detection_service
 from app.config import settings
+from app.utils.minio_utils import storage
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +35,13 @@ class CameraDetectionService:
         self._fps_frame_count = 0
         self._last_fps_time = time.time()
         
+        # 历史记录节流：每个用户每 10 秒最多保存一次
+        self._last_save_time = {} # {user_id: timestamp}
+        
         # 配置
-        self._confidence_threshold = 0.5
+        self._confidence_threshold = 0.25 # 🌟 降低阈值，提高对小目标的召回率
         self._iou_threshold = 0.7
-        self._model_image_size = 320  # 降低分辨率提升速度
+        self._model_image_size = 640  # 🌟 提升到标准 640 尺寸，确保小目标不失真
         
         # 并发控制
         self._max_concurrent_requests = 5
@@ -41,12 +49,13 @@ class CameraDetectionService:
         
         self._initialized = True
 
-    def detect_image(self, image: np.ndarray) -> Dict[str, Any]:
+    def detect_image(self, image: np.ndarray, user_id: int = None) -> Dict[str, Any]:
         """
         检测单张图像（核心推理方法）
         
         参数：
             image: 输入图像（BGR格式）
+            user_id: 当前用户ID
             
         返回：
             Dict: 检测结果
@@ -92,6 +101,14 @@ class CameraDetectionService:
             
             detection_time = time.time() - start_time
             
+            # --- 历史记录自动保存逻辑 (节流控制) ---
+            current_time = time.time()
+            if user_id and len(boxes) > 0:
+                last_save = self._last_save_time.get(user_id, 0)
+                if current_time - last_save > 10: # 10秒保存一次有目标的快照
+                    self._last_save_time[user_id] = current_time
+                    threading.Thread(target=self._async_save_history, args=(image, results[0], boxes, user_id, detection_time)).start()
+            
             # 更新统计信息
             self._frame_count += 1
             self._fps_frame_count += 1
@@ -111,5 +128,48 @@ class CameraDetectionService:
                 "detection_time": round(detection_time, 3),
                 "total_objects": len(boxes)
             }
+
+    def _async_save_history(self, image, result, boxes, user_id, detection_time):
+        """异步保存摄像头快照到历史记录"""
+        try:
+            detection_id = f"cam_{uuid.uuid4().hex[:8]}"
+            
+            # 1. 上传原始快照
+            _, buffer = cv2.imencode('.jpg', image)
+            original_url = storage.client.put_object(
+                storage.bucket_name,
+                f"uploads/{detection_id}_orig.jpg",
+                io.BytesIO(buffer),
+                length=len(buffer),
+                content_type="image/jpeg"
+            )
+            original_url = storage.get_url(f"uploads/{detection_id}_orig.jpg")
+
+            # 2. 上传带框结果
+            annotated_image = result.plot()
+            _, buffer_res = cv2.imencode('.jpg', annotated_image)
+            result_url = storage.client.put_object(
+                storage.bucket_name,
+                f"results/{detection_id}_res.jpg",
+                io.BytesIO(buffer_res),
+                length=len(buffer_res),
+                content_type="image/jpeg"
+            )
+            result_url = storage.get_url(f"results/{detection_id}_res.jpg")
+
+            # 3. 写入数据库
+            detection_service.save_history(
+                user_id=user_id,
+                detection_id=detection_id,
+                type="camera",
+                original_url=original_url,
+                result_url=result_url,
+                total_objects=len(boxes),
+                detection_time=round(detection_time, 3),
+                model_name="best"
+            )
+            logger.info(f"📸 摄像头快照已自动保存到历史: {detection_id}")
+        except Exception as e:
+            logger.error(f"❌ 摄像头快照保存失败: {e}")
 
 camera_detection_service = CameraDetectionService()

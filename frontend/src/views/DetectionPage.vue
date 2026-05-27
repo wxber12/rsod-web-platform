@@ -88,7 +88,7 @@
 
         <!-- 摄像头检测区域 -->
         <div v-if="activeTab === 'camera'" class="camera-section">
-          <CameraDetection />
+          <CameraDetection @detected="handleCameraDetected" />
         </div>
 
         <!-- 图片对比区域 -->
@@ -194,6 +194,9 @@
           </div>
           <div class="diagnosis-content">
             <p v-if="isDetecting">正在分析中...</p>
+            <p v-else-if="detectionResult && activeTab === 'camera'">
+              实时监控中... 当前画面检测到 {{ detectionResult.total_objects }} 个目标。系统正以 {{ detectionResult.fps }} FPS 的速率进行动态分析。
+            </p>
             <p v-else-if="detectionResult && activeTab === 'video'">
               视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧，累计识别目标 {{ detectionResult.total_objects }} 次。您可以播放右侧结果视频查看识别动态。
             </p>
@@ -253,7 +256,6 @@ const originalVideo = ref("");
 const resultVideo = ref("");
 const detectionResult = ref(null);
 const batchResults = ref([]); // 批量检测结果集
-
 const functionTabs = [
   {
     key: "single",
@@ -429,6 +431,10 @@ const selectBatchItem = (item) => {
   originalImage.value = item.image_url;
   resultImage.value = item.result_image_url;
   detectionResult.value = item;
+};
+
+const handleCameraDetected = (data) => {
+  detectionResult.value = data;
 };
 </script>
 

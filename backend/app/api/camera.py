@@ -34,8 +34,8 @@ async def detect_frame(request: dict, current_user: dict = Depends(get_current_u
         if image is None:
             return {"success": False, "message": "图像解码失败"}
             
-        # 调用检测服务
-        result = camera_detection_service.detect_image(image)
+        # 调用检测服务 (传入 user_id 用于历史记录)
+        result = camera_detection_service.detect_image(image, user_id=current_user["user_id"])
         
         return {
             "success": True,

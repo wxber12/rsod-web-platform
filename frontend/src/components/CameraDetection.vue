@@ -54,7 +54,7 @@
             @click="toggleCamera"
           >
             <el-icon>
-              <component :is="isRunning ? 'CircleClose' : 'VideoCamera'" />
+              <component :is="isRunning ? CircleClose : VideoCamera" />
             </el-icon>
             {{ isRunning ? '停止检测' : '启动检测' }}
           </el-button>
@@ -65,7 +65,7 @@
             @click="isPaused = !isPaused"
           >
             <el-icon>
-              <component :is="isPaused ? 'VideoPlay' : 'VideoPause'" />
+              <component :is="isPaused ? VideoPlay : VideoPause" />
             </el-icon>
             {{ isPaused ? '恢复' : '暂停' }}
           </el-button>
@@ -107,6 +107,8 @@ const fps = ref(0);
 const totalObjects = ref(0);
 const detectionTime = ref(0);
 const inferenceInterval = ref(2);
+
+const emit = defineEmits(['detected']);
 
 let videoStream = null;
 let animationId = null;
@@ -165,8 +167,9 @@ const initCanvas = () => {
   if (videoRef.value && canvasRef.value) {
     canvasRef.value.width = videoRef.value.videoWidth;
     canvasRef.value.height = videoRef.value.videoHeight;
-    captureCanvasRef.value.width = 320; // 降低推理分辨率
-    captureCanvasRef.value.height = 240;
+    // 🌟 提升推理分辨率到 640x480，确保能看清“车”等小目标
+    captureCanvasRef.value.width = 640; 
+    captureCanvasRef.value.height = 480;
   }
 };
 
@@ -214,6 +217,8 @@ const performDetection = async () => {
       totalObjects.value = data.total_objects;
       detectionTime.value = data.detection_time;
       drawBoxes(data.boxes);
+      // 向父组件同步结果，用于更新右侧清单和诊断建议
+      emit('detected', data);
     }
   } catch (error) {
     console.error('检测请求失败:', error);
@@ -230,8 +235,10 @@ const drawBoxes = (boxes) => {
   
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  const scaleX = canvas.width / videoRef.value.videoWidth;
-  const scaleY = canvas.height / videoRef.value.videoHeight;
+  // 🌟 修复：推理是在 640x480 的 captureCanvas 上进行的
+  // 需要将坐标从 640x480 缩放到当前显示的 canvas 尺寸
+  const scaleX = canvas.width / 640;
+  const scaleY = canvas.height / 480;
 
   boxes.forEach(box => {
     const x1 = box.x1 * scaleX;
