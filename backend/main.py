@@ -8,6 +8,7 @@ from app.api.history import router as history_router
 from app.api.profile import router as profile_router
 import os
 from app.utils.paths import Paths
+from app.config import settings
 # 在应用启动时自动检查并创建必要的目录结构
 Paths.init_all_dirs()
 
@@ -20,7 +21,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
