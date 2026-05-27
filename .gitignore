@@ -18,8 +18,22 @@ storage/
 *.pt
 *.pth
 *.onnx
-# 训练好的植物病害分类模型（需要共享给队友）
-!backend/models/plant_disease_best.pt
+# 训练好的模型权重（共享给队友）
+!backend/models/plant_disease/*.pt
+!backend/models/rsod/*.pt
+!backend/app/models/*.pt
+# 原始解压数据（体积过大，从zip重新生成）
+backend/data/rsod/_extracted/
+# YOLO数据集配置文件保留，图片和标注不入库（体积大，从脚本生成）
+!backend/data/
+!backend/data/rsod/
+!backend/data/rsod/dataset_stats.json
+!backend/data/rsod/yolo_dataset/
+!backend/data/rsod/yolo_dataset/rsod.yaml
+backend/data/rsod/yolo_dataset/images/
+backend/data/rsod/yolo_dataset/labels/
+# 根目录误生成的runs
+/runs/
 # IDE配置
 .vscode/
 .idea/

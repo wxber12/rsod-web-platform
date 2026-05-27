@@ -12,10 +12,10 @@ from pathlib import Path
 # ============================================================
 # 路径配置
 # ============================================================
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATASET_DIR  = PROJECT_ROOT / "dataset"
-MODELS_DIR   = PROJECT_ROOT / "backend" / "models"
-RUNS_DIR     = PROJECT_ROOT / "backend" / "runs" / "classify"
+MODELS_DIR   = PROJECT_ROOT / "backend" / "models" / "plant_disease"
+RUNS_DIR     = PROJECT_ROOT / "backend" / "runs" / "plant_disease"
 
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
@@ -95,7 +95,7 @@ def evaluate(run_dir: Path):
 
 def export_best(run_dir: Path, eval_metrics: dict, model_name: str, elapsed: float):
     best_pt  = run_dir / "weights" / "best.pt"
-    dest_pt  = MODELS_DIR / "plant_disease_best.pt"
+    dest_pt  = MODELS_DIR / "best.pt"
 
     if not best_pt.exists():
         print("[export] 未找到 best.pt，跳过导出")
@@ -155,7 +155,7 @@ def main():
 
     print("\n" + "=" * 60)
     print(f"训练完成！耗时 {elapsed/60:.1f} 分钟")
-    print(f"最优模型: {MODELS_DIR / 'plant_disease_best.pt'}")
+    print(f"最优模型: {MODELS_DIR / 'best.pt'}")
     print("=" * 60)
 
 
