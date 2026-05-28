@@ -65,11 +65,14 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
+      MINIO_PUBLIC_ENDPOINT: 8.229.104.133:9000
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
+    volumes:
+      - ./.rsod_platform:/app/.rsod_platform:ro
 
   # Frontend (Vue + Nginx)
   frontend:
