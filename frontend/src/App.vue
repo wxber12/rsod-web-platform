@@ -28,4 +28,17 @@ const isAuthPage = computed(() => {
 });
 </script>
 
-<style scoped></style>
+<style>
+/* 全局样式：确保根元素占满全屏，移除默认边距 */
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 可选：统一盒模型 */
+* {
+  box-sizing: border-box;
+}
+</style>

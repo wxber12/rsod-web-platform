@@ -80,8 +80,15 @@ class HistoryDetailResponse(BaseModel):
 class TargetItem(BaseModel):
     id: int
     name: str
-    count: int
-    icon: str
+    chinese_name: Optional[str] = None
+    description: Optional[str] = None
+    count: int = 0
+    icon: Optional[str] = None
+
+    # id: int
+    # name: str
+    # count: int
+    # icon: str
 
 
 class TargetListResponse(BaseModel):

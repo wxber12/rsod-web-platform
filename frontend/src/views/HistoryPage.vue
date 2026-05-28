@@ -3,7 +3,7 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <h1 class="page-title">检测历史记录</h1>
-      <p class="page-subtitle">查看和管理您的所有检测记录</p>
+      <p class="page-subtitle">查看和管理您的所有病虫害检测记录</p>
     </div>
 
     <!-- 搜索和筛选 -->
@@ -32,7 +32,7 @@
         <el-option label="批量检测" value="batch" />
         <el-option label="视频检测" value="video" />
       </el-select>
-      
+
       <el-button type="primary" plain @click="fetchHistory">
         <el-icon><Refresh /></el-icon>
         刷新
@@ -77,7 +77,7 @@
             </span>
             <span class="meta-item">
               <el-icon><Aim /></el-icon>
-              {{ record.total_objects }} 个目标
+              {{ record.total_objects }} 处病虫害
             </span>
             <span class="meta-item">
               <el-icon><Timer /></el-icon>
@@ -149,7 +149,7 @@
             <span class="value">{{ formatDate(currentDetail.created_at) }}</span>
           </div>
           <div class="info-item">
-            <span class="label">目标数量:</span>
+            <span class="label">病虫害数量:</span>
             <span class="value">{{ currentDetail.total_objects }}</span>
           </div>
           <div class="info-item">
@@ -205,6 +205,7 @@
 </template>
 
 <script setup>
+// 脚本部分完全保留原逻辑，不做任何修改
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import {
@@ -251,7 +252,6 @@ const fetchHistory = async () => {
     });
     if (res.success) {
       historyRecords.value = res.data;
-      // 简单模拟总数，实际后端应返回总条数
       totalRecords.value = res.data.length === pageSize.value ? currentPage.value * pageSize.value + 1 : historyRecords.value.length;
     }
   } catch (error) {
@@ -316,28 +316,26 @@ const viewRecord = async (record) => {
 const downloadResult = async (record) => {
   if (!record) return;
   const url = getFullUrl(record.result_image_url);
-  
+
   try {
     const response = await fetch(url);
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = blobUrl;
-    
-    // 生成文件名：检测ID_日期.扩展名
+
     const extension = record.type === 'video' ? 'mp4' : 'jpg';
     link.download = `detection_${record.detection_id.substring(0, 8)}_${new Date().getTime()}.${extension}`;
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
-    
+
     ElMessage.success("开始下载文件...");
   } catch (error) {
     console.error("下载失败:", error);
-    // 降级方案：直接打开
     window.open(url, '_blank');
   }
 };
@@ -352,62 +350,117 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+/* 农业主题统一样式（与 LoginPage1.0 和 DetectionPage 保持一致） */
 .history-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  min-height: 100vh;
+  padding: 32px 48px;
+  background-image: url('./background/0.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-header,
+  .search-bar,
+  .history-list,
+  .pagination-wrapper {
+    position: relative;
+    z-index: 2;
+  }
 
   .page-header {
     margin-bottom: 32px;
     .page-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 8px;
+      font-size: 42px;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
     }
     .page-subtitle {
-      color: #6b7280;
-      font-size: 16px;
+      font-size: 18px;
+      color: rgba(255, 255, 240, 0.9);
     }
   }
 
   .search-bar {
     display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 20px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    align-items: center;
+
     .search-input {
       width: 300px;
+      :deep(.el-input__wrapper) {
+        background: rgba(255, 252, 245, 0.95);
+        border-radius: 60px;
+        padding: 12px 20px;
+        border: none;
+      }
     }
     .filter-select {
       width: 160px;
+      :deep(.el-input__wrapper) {
+        background: rgba(255, 252, 245, 0.95);
+        border-radius: 60px;
+        padding: 12px 20px;
+        border: none;
+      }
+    }
+    .el-button {
+      border-radius: 40px;
+      padding: 12px 24px;
+      background: rgba(255, 252, 245, 0.9);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 245, 215, 0.6);
+      &:hover {
+        background: #fef5e6;
+        transform: translateY(-2px);
+      }
     }
   }
 
   .history-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 24px;
-    margin-bottom: 32px;
+    gap: 28px;
+    margin-bottom: 40px;
   }
 
   .history-card {
-    background: white;
-    border-radius: 12px;
+    background: rgba(255, 252, 245, 0.88);
+    backdrop-filter: blur(16px);
+    border-radius: 32px;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 245, 215, 0.6);
     cursor: pointer;
-    border: 1px solid #e5e7eb;
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      transform: translateY(-6px);
+      background: rgba(255, 252, 245, 0.96);
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
     }
 
     .record-preview {
       height: 200px;
       position: relative;
-      background: #f3f4f6;
+      background: #2d3e2b;
       .preview-image {
         width: 100%;
         height: 100%;
@@ -417,53 +470,62 @@ onMounted(() => {
         position: absolute;
         top: 12px;
         right: 12px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 13px;
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 4px;
-        background: rgba(255, 255, 255, 0.9);
+        gap: 6px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        color: #cfb53b;
         &.completed {
-          color: #10b981;
+          color: #2e7d32;
+          background: rgba(255, 255, 255, 0.9);
         }
       }
     }
 
     .record-info {
-      padding: 16px;
+      padding: 20px;
       .record-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 12px;
         .record-filename {
-          font-weight: 600;
-          color: #374151;
-          font-size: 14px;
+          font-size: 18px;
+          font-weight: 700;
+          color: #1a3a32;
         }
       }
       .record-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 16px;
         .meta-item {
           display: flex;
           align-items: center;
-          gap: 4px;
-          font-size: 12px;
-          color: #6b7280;
+          gap: 6px;
+          font-size: 14px;
+          color: #5d6e4a;
         }
       }
     }
 
     .record-actions {
-      padding: 12px 16px;
-      border-top: 1px solid #f3f4f6;
+      padding: 16px 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 12px;
+      .el-button {
+        border-radius: 40px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 500;
+      }
     }
   }
 
@@ -471,12 +533,22 @@ onMounted(() => {
     text-align: center;
     padding: 80px 0;
     .empty-icon {
-      color: #e5e7eb;
-      margin-bottom: 16px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 24px;
     }
     .empty-text {
-      color: #9ca3af;
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
       margin-bottom: 24px;
+    }
+    .el-button {
+      border-radius: 60px;
+      padding: 12px 28px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #1a3a32, #2b5a48);
+      border: none;
     }
   }
 
@@ -484,69 +556,80 @@ onMounted(() => {
     display: flex;
     justify-content: center;
     margin-top: 40px;
+    :deep(.el-pagination) {
+      .btn-prev, .btn-next, .el-pager li {
+        background: rgba(255, 252, 245, 0.8);
+        backdrop-filter: blur(4px);
+        border-radius: 30px;
+        margin: 0 4px;
+        color: #1a3a32;
+        &:hover {
+          background: #cfb53b;
+          color: white;
+        }
+      }
+      .el-pager li.active {
+        background: #2e7d32;
+        color: white;
+      }
+    }
   }
 
   /* 详情弹窗样式 */
   .detail-container {
     padding: 10px;
-    
     .detail-info-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-      background: #f9fafb;
-      padding: 20px;
-      border-radius: 8px;
+      background: rgba(255, 252, 245, 0.9);
+      backdrop-filter: blur(12px);
+      padding: 24px;
+      border-radius: 32px;
       margin-bottom: 30px;
-      
       .info-item {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        
         .label {
-          font-size: 13px;
-          color: #6b7280;
+          font-size: 14px;
+          color: #5d6e4a;
         }
-        
         .value {
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 600;
-          color: #1f2937;
+          color: #1a3a32;
         }
       }
     }
-    
     .detail-compare {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      
+      gap: 28px;
       .compare-box {
         .box-title {
-          font-weight: 600;
-          margin-bottom: 12px;
-          color: #374151;
+          font-size: 18px;
+          font-weight: 700;
+          margin-bottom: 16px;
+          color: #1a3a32;
           display: flex;
           align-items: center;
-          gap: 8px;
-          
+          gap: 10px;
           &::before {
             content: '';
-            width: 4px;
-            height: 16px;
-            background: #4f46e5;
-            border-radius: 2px;
+            width: 5px;
+            height: 20px;
+            background: #cfb53b;
+            border-radius: 3px;
           }
         }
-        
         .compare-media {
           width: 100%;
           max-height: 500px;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          border-radius: 20px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
           object-fit: contain;
-          background: #000;
+          background: #1a2a1f;
         }
       }
     }
