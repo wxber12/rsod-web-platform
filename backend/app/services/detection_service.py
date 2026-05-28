@@ -271,6 +271,7 @@ class DetectionService:
     def get_class_chinese_name(self, class_name: str) -> str:
         """获取类别的中文名称，增强对不同模型类别的兼容性"""
         mapping = {
+            # RSOD 遥感目标类别
             "aircraft": "飞机",
             "oiltank": "油罐",
             "overpass": "立交桥",
@@ -280,6 +281,21 @@ class DetectionService:
             "vehicle": "车辆",
             "ship": "船舶",
             "building": "建筑物",
+            # 害虫识别类别
+            "aphid": "蚜虫",
+            "whitefly": "白粉虱",
+            "leaf_miner": "潜叶蝇",
+            "leafminer": "潜叶蝇",
+            "thrips": "蓟马",
+            "spider_mite": "红蜘蛛",
+            "spidermite": "红蜘蛛",
+            "armyworm": "粘虫",
+            "bollworm": "棉铃虫",
+            "locust": "蝗虫",
+            "moth": "蛾类",
+            "beetle": "甲虫",
+            "caterpillar": "毛虫",
+            "mealybug": "粉蚧",
             # PlantVillage 常见类别映射
             "apple": "苹果",
             "corn": "玉米",

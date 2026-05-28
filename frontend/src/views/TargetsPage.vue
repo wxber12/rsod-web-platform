@@ -9,7 +9,7 @@
     <!-- 搜索和刷新 -->
     <div class="search-container">
       <el-select v-model="selectedModel" placeholder="选择模型库" class="model-select" @change="fetchTargets">
-        <el-option label="遥感目标库 (Best)" value="best" />
+        <el-option label="害虫识别库 (Best)" value="best" />
         <el-option label="植物病害库 (Last)" value="last" />
       </el-select>
       <el-input
@@ -108,19 +108,26 @@
           </div>
           <div class="detail-title">
             <h4>{{ selectedTarget.name }}</h4>
-            <p>农业病虫害标准识别目标</p>
+            <p>{{ selectedModel === 'last' ? '植物病害智能识别目标' : '农业害虫智能识别目标' }}</p>
           </div>
         </div>
 
         <el-descriptions :column="1" border class="detail-desc">
           <el-descriptions-item label="目标编号">{{ selectedTarget.id }}</el-descriptions-item>
           <el-descriptions-item label="累计识别">{{ selectedTarget.count }} 次</el-descriptions-item>
-          <el-descriptions-item label="模型权重">YOLOv11-Crop-Pest-Best</el-descriptions-item>
-          <el-descriptions-item label="应用场景">农田、果园、温室、大田作物</el-descriptions-item>
+          <el-descriptions-item label="模型权重">{{ selectedModel === 'last' ? 'YOLOv11-Plant-Disease-Last' : 'YOLOv11-Pest-Detection-Best' }}</el-descriptions-item>
+          <el-descriptions-item label="应用场景">{{ selectedModel === 'last' ? '果园、温室、蔬菜大棚、农田' : '农田、果园、温室、大田作物' }}</el-descriptions-item>
           <el-descriptions-item label="识别特征">
-            <el-tag size="small">病斑特征</el-tag>
-            <el-tag size="small" type="success" style="margin-left: 5px">虫体形态</el-tag>
-            <el-tag size="small" type="warning" style="margin-left: 5px">叶部症状</el-tag>
+            <template v-if="selectedModel === 'last'">
+              <el-tag size="small">病斑特征</el-tag>
+              <el-tag size="small" type="warning" style="margin-left: 5px">叶部症状</el-tag>
+              <el-tag size="small" type="danger" style="margin-left: 5px">枯萎变色</el-tag>
+            </template>
+            <template v-else>
+              <el-tag size="small">虫体形态</el-tag>
+              <el-tag size="small" type="success" style="margin-left: 5px">危害痕迹</el-tag>
+              <el-tag size="small" type="warning" style="margin-left: 5px">虫卵分布</el-tag>
+            </template>
           </el-descriptions-item>
         </el-descriptions>
 
@@ -149,14 +156,20 @@ import {
   Promotion,
   Box,
   Sugar,
-  QuestionFilled
+  QuestionFilled,
+  Warning,
+  WarningFilled,
+  CircleCheck,
+  Sunny,
+  Cloudy,
+  Drizzling
 } from "@element-plus/icons-vue";
 import request from '../utils/request';
 import { ElMessage } from "element-plus";
 
 const loading = ref(false);
 const searchQuery = ref("");
-const selectedModel = ref("best"); // 🌟 默认查看遥感库
+const selectedModel = ref("best"); // 🌟 默认查看害虫识别库
 const showDialog = ref(false);
 const selectedTarget = ref(null);
 const targets = ref([]);
@@ -179,13 +192,18 @@ const fetchTargets = async () => {
   }
 };
 
-// 根据病虫害名称返回对应图标（仅使用存在的图标）
+// 根据病虫害名称返回对应图标
 const getIcon = (name) => {
-  if (name.includes('飞机')) return Promotion;
-  if (name.includes('油罐')) return Box;
-  if (name.includes('桥')) return Location;
-  if (name.includes('操场')) return Aim;
-  if (name.includes('苹果') || name.includes('番茄') || name.includes('健康')) return Sugar;
+  // 害虫类别
+  if (name.includes('蚜虫')) return Cloudy;
+  if (name.includes('白粉虱')) return Sunny;
+  if (name.includes('潜叶蝇')) return Drizzling;
+  if (name.includes('蓟马')) return Promotion;
+  if (name.includes('红蜘蛛')) return WarningFilled;
+  if (name.includes('粘虫')) return Ship;
+  // 植物病害类别
+  if (name.includes('健康')) return CircleCheck;
+  if (name.includes('病') || name.includes('腐') || name.includes('锈')) return Warning;
   return Aim;
 };
 
