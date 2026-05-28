@@ -1,23 +1,40 @@
 # Python虚拟环境
 .venv/
+venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-⼆、Docker Compose部署
-2.1 安装Docker（如未安装）
-2.2 创建docker-compose.yml
 # 环境变量
 .env
 .env.local
-# 数据⽂件
+# 数据文件（数据集体积过大，不入库）
 data/
+dataset/
 uploads/
 results/
 # Docker数据
 storage/
-# 模型⽂件
-models/*.pt
+# 模型权重（运行时下载，不入库）
+*.pt
+*.pth
+*.onnx
+# 训练好的模型权重（共享给队友）
+!backend/models/plant_disease/*.pt
+!backend/models/rsod/*.pt
+!backend/app/models/*.pt
+# 原始解压数据（体积过大，从zip重新生成）
+backend/data/rsod/_extracted/
+# YOLO数据集配置文件保留，图片和标注不入库（体积大，从脚本生成）
+!backend/data/
+!backend/data/rsod/
+!backend/data/rsod/dataset_stats.json
+!backend/data/rsod/yolo_dataset/
+!backend/data/rsod/yolo_dataset/rsod.yaml
+backend/data/rsod/yolo_dataset/images/
+backend/data/rsod/yolo_dataset/labels/
+# 根目录误生成的runs
+/runs/
 # IDE配置
 .vscode/
 .idea/

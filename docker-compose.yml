@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL 数据库
   postgres:
@@ -8,14 +6,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: rsoduser
-      POSTGRES_PASSWORD: rsodpassword
-      POSTGRES_DB: rsod_db
+      POSTGRES_USER: my_user
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: my_db
     volumes:
       - ./storage/postgres/data:/var/lib/postgresql/data
       - ./storage/postgres/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rsoduser -d rsod_db"]
+      test: ["CMD-SHELL", "pg_isready -U my_user -d my_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -43,7 +41,7 @@ services:
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: 12345678
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - ./storage/minio/data:/data
       - ./storage/minio/config:/root/.minio
