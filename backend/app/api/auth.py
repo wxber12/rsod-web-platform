@@ -100,8 +100,8 @@ async def forgot_password(request: ForgotPasswordRequest):
         }
         reset_token = jwt.encode(token_payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
         
-        # 拼接前端的重置密码页面链接 (根据您的前端端口 5173)
-        reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+        # 拼接前端的重置密码页面链接
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
         
         # 发送真实邮件给该用户的邮箱
         success, error_msg = send_reset_password_email(user["email"], reset_link)

@@ -16,7 +16,7 @@ ensure_directories()
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
         file: UploadFile = File(...),
-        model_name: str = Form("pest-v1"),
+        model_name: str = Form("best_rsod"),
         current_user: dict = Depends(get_current_user)
 ):
     image_path = None
@@ -42,7 +42,7 @@ async def detect_single_image(
 @router.post("/batch", response_model=BatchDetectionResponse)
 async def detect_batch(
         files: List[UploadFile] = File(...),
-        model_name: str = Form("best"),
+        model_name: str = Form("best_rsod"),
         current_user: dict = Depends(get_current_user)
 ):
     image_paths = []
@@ -71,7 +71,7 @@ async def detect_batch(
 @router.post("/video", response_model=VideoDetectionResponse)
 async def detect_video(
         file: UploadFile = File(...),
-        model_name: str = Form("best"),
+        model_name: str = Form("best_rsod"),
         current_user: dict = Depends(get_current_user)
 ):
     video_path = None
@@ -92,6 +92,28 @@ async def detect_video(
         # 检测完成后清理本地临时上传视频
         if video_path and os.path.exists(video_path):
             os.remove(video_path)
+
+
+@router.get("/models")
+async def get_available_models(current_user: dict = Depends(get_current_user)):
+    """获取可用模型列表"""
+    models_dir = detection_service.models_dir
+    models = []
+    for pt_file in sorted(models_dir.glob("*.pt")):
+        model_name = pt_file.stem
+        # 尝试获取模型的类别信息
+        try:
+            model = detection_service._get_or_load_model(model_name)
+            class_names = detection_service.class_names.get(model_name, {})
+            classes = list(class_names.values()) if isinstance(class_names, dict) else []
+        except Exception:
+            classes = []
+        models.append({
+            "name": model_name,
+            "classes": classes,
+            "size_mb": round(pt_file.stat().st_size / 1024 / 1024, 2)
+        })
+    return {"success": True, "data": models}
 
 
 @router.get("/targets/list", response_model=TargetListResponse)

@@ -19,7 +19,9 @@ class Settings(BaseModel):
     CONFIDENCE_THRESHOLD: float = 0.5
     IOU_THRESHOLD: float = 0.45
 
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000", "http://localhost", "http://localhost:80"]
+
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
     JWT_SECRET: str = os.getenv("JWT_SECRET", "rsod-platform-secret-key-2026-secure-xyz")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
@@ -27,10 +29,10 @@ class Settings(BaseModel):
     DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
 
     # SMTP Settings
-    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.qq.com")
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", 465))
-    SMTP_USER: str = os.getenv("SMTP_USER", "1183209167@qq.com")
-    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "cbspquvlxkpbjffe")
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "RSOD Platform")
 
     # MinIO Settings
@@ -39,6 +41,7 @@ class Settings(BaseModel):
     MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "minioadmin")
     MINIO_SECURE: bool = os.getenv("MINIO_SECURE", "False").lower() == "true"
     MINIO_BUCKET_NAME: str = os.getenv("MINIO_BUCKET_NAME", "rsod-platform")
+    MINIO_PUBLIC_ENDPOINT: str = os.getenv("MINIO_PUBLIC_ENDPOINT", "")  # 浏览器访问地址，留空则用 MINIO_ENDPOINT
 
 
 def get_settings() -> Settings:
@@ -46,7 +49,7 @@ def get_settings() -> Settings:
 
     env_file = ".env"
     if os.path.exists(env_file):
-        with open(env_file, "r") as f:
+        with open(env_file, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):

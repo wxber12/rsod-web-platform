@@ -69,3 +69,11 @@ export const getTargetList = () => {
     method: 'get'
   })
 }
+
+// 获取可用模型列表
+export const getAvailableModels = () => {
+  return request({
+    url: '/detection/models',
+    method: 'get'
+  })
+}

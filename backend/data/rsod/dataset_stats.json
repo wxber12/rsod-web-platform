@@ -1,0 +1,21 @@
+{
+  "total_images": 936,
+  "per_class_images": {
+    "aircraft": 446,
+    "oiltank": 165,
+    "overpass": 176,
+    "playground": 149
+  },
+  "split": {
+    "train": 748,
+    "val": 93,
+    "test": 95
+  },
+  "classes": [
+    "aircraft",
+    "oiltank",
+    "overpass",
+    "playground"
+  ],
+  "yolo_dataset": "d:\\rsod-web-platform\\backend\\data\\rsod\\yolo_dataset"
+}

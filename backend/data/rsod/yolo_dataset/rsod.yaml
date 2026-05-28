@@ -1,0 +1,14 @@
+# RSOD 遥感目标检测数据集配置
+path: d:\rsod-web-platform\backend\data\rsod\yolo_dataset
+
+train: images/train
+val:   images/val
+test:  images/test
+
+nc: 4
+names: ['aircraft', 'oiltank', 'overpass', 'playground']
+
+# 数据集统计
+# train: 748 images
+# val:   93 images
+# test:  95 images
