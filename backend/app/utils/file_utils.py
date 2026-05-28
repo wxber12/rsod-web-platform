@@ -10,6 +10,8 @@ def ensure_directories():
     检查并创建必要的临时上传目录
     """
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    os.makedirs(settings.RESULT_DIR, exist_ok=True)
+    os.makedirs("runs", exist_ok=True)
 
 
 async def save_upload_file(file: UploadFile, upload_dir: str) -> str:
@@ -28,12 +30,3 @@ async def save_upload_file(file: UploadFile, upload_dir: str) -> str:
         shutil.copyfileobj(file.file, buffer)
 
     return filename
-
-
-def get_file_url(filename: str, directory: str) -> str:
-    """
-    生成可以直接在浏览器中访问的 URL 路径
-    """
-    # 确保路径以 / 开头，以便前端能够正确拼接根域名
-    # 例如将 "static/uploads" 和 "a.jpg" 拼接为 "/static/uploads/a.jpg"
-    return f"/{directory}/{filename}"

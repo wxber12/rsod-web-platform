@@ -8,6 +8,10 @@
 
     <!-- 搜索和刷新 -->
     <div class="search-container">
+      <el-select v-model="selectedModel" placeholder="选择模型库" class="model-select" @change="fetchTargets">
+        <el-option label="遥感目标库 (Best)" value="best" />
+        <el-option label="植物病害库 (Last)" value="last" />
+      </el-select>
       <el-input
         v-model="searchQuery"
         placeholder="搜索目标类别..."
@@ -142,13 +146,16 @@ import {
   Ship,
   Location,
   Promotion,
-  Box
+  Box,
+  Sugar,
+  QuestionFilled
 } from "@element-plus/icons-vue";
 import request from '../utils/request';
 import { ElMessage } from "element-plus";
 
 const loading = ref(false);
 const searchQuery = ref("");
+const selectedModel = ref("best"); // 🌟 默认查看遥感库
 const showDialog = ref(false);
 const selectedTarget = ref(null);
 const targets = ref([]);
@@ -156,9 +163,13 @@ const targets = ref([]);
 const fetchTargets = async () => {
   loading.value = true;
   try {
-    const res = await request.get('/detection/targets/list');
+    const res = await request.get('/detection/targets/list', {
+      params: { model_name: selectedModel.value }
+    });
     if (res.success) {
       targets.value = res.data;
+    } else {
+      ElMessage.warning(res.message || "后端未返回有效数据");
     }
   } catch (error) {
     ElMessage.error("获取目标库失败");
@@ -172,6 +183,7 @@ const getIcon = (name) => {
   if (name.includes('油罐')) return Box;
   if (name.includes('桥')) return Location;
   if (name.includes('操场')) return Aim;
+  if (name.includes('苹果') || name.includes('番茄') || name.includes('健康')) return Sugar;
   return Aim;
 };
 
@@ -217,6 +229,11 @@ onMounted(() => {
     display: flex;
     gap: 16px;
     margin-bottom: 32px;
+    
+    .model-select {
+      width: 180px;
+    }
+    
     .search-input {
       width: 300px;
     }

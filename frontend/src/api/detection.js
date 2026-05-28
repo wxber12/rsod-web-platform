@@ -63,9 +63,10 @@ export const getDetectionDetail = (id) => {
 }
 
 // 获取目标库列表
-export const getTargetList = () => {
+export const getTargetList = (params) => {
   return request({
-    url: '/targets/list',
-    method: 'get'
+    url: '/detection/targets/list',
+    method: 'get',
+    params
   })
 }

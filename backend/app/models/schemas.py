@@ -11,6 +11,7 @@ class DetectionBox(BaseModel):
     confidence: float
     class_id: int
     class_name: str
+    chinese_name: Optional[str] = None
 
 
 class DetectionResult(BaseModel):

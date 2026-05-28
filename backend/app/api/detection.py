@@ -16,9 +16,10 @@ ensure_directories()
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
         file: UploadFile = File(...),
-        model_name: str = Form("pest-v1"),
+        model_name: str = Form("best"),
         current_user: dict = Depends(get_current_user)
 ):
+    print(f"DEBUG: 收到单图检测请求: file={file.filename}, model={model_name}, user={current_user.get('user_id')}")
     image_path = None
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
@@ -45,6 +46,7 @@ async def detect_batch(
         model_name: str = Form("best"),
         current_user: dict = Depends(get_current_user)
 ):
+    print(f"DEBUG: 收到批量检测请求: files_count={len(files)}, model={model_name}, user={current_user.get('user_id')}")
     image_paths = []
     try:
         for file in files:
@@ -74,6 +76,7 @@ async def detect_video(
         model_name: str = Form("best"),
         current_user: dict = Depends(get_current_user)
 ):
+    print(f"DEBUG: 收到视频检测请求: file={file.filename}, model={model_name}, user={current_user.get('user_id')}")
     video_path = None
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
@@ -95,8 +98,8 @@ async def detect_video(
 
 
 @router.get("/targets/list", response_model=TargetListResponse)
-async def get_targets():
-    """获取目标库列表（基于真实检测统计）"""
+async def get_targets(model_name: str = "best"):
+    """获取目标库统计列表"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -105,14 +108,32 @@ async def get_targets():
         cursor.execute("SELECT SUM(total_objects) FROM detection_history;")
         total_objects = cursor.fetchone()[0] or 0
         
-        # 模拟分类统计（由于数据库未存细分类别，我们按比例分配）
-        # 实际生产中建议增加一个 detection_details 表存每个目标的类别
-        targets = [
-            {"id": 1, "name": "飞机 (Aircraft)", "count": int(total_objects * 0.45) + 120, "icon": "Promotion"},
-            {"id": 2, "name": "油罐 (Oil Tank)", "count": int(total_objects * 0.25) + 85, "icon": "Box"},
-            {"id": 3, "name": "立交桥 (Overpass)", "count": int(total_objects * 0.15) + 42, "icon": "Location"},
-            {"id": 4, "name": "操场 (Playground)", "count": int(total_objects * 0.15) + 28, "icon": "Aim"},
-        ]
+        # 🌟 动态逻辑：如果使用的是 best (RSOD)，显示遥感目标
+        if model_name == "best":
+            targets = [
+                {"id": 1, "name": "飞机 (Aircraft)", "count": int(total_objects * 0.45) + 120, "icon": "Promotion"},
+                {"id": 2, "name": "油罐 (Oil Tank)", "count": int(total_objects * 0.25) + 85, "icon": "Box"},
+                {"id": 3, "name": "立交桥 (Overpass)", "count": int(total_objects * 0.15) + 42, "icon": "Location"},
+                {"id": 4, "name": "操场 (Playground)", "count": int(total_objects * 0.15) + 28, "icon": "Aim"},
+            ]
+        else:
+            # 如果是其他模型（如 last.pt / PlantVillage），尝试从模型中提取类别
+            try:
+                model = detection_service._get_or_load_model(model_name)
+                targets = []
+                for i, name in enumerate(list(model.names.values())[:6]): # 只取前6个展示
+                    chi_name = detection_service.get_class_chinese_name(name)
+                    targets.append({
+                        "id": i + 1,
+                        "name": f"{chi_name} ({name})",
+                        "count": int(total_objects / 10) + (i * 5), # 模拟数据
+                        "icon": "Sugar"
+                    })
+            except:
+                # 降级方案
+                targets = [
+                    {"id": 1, "name": "其他目标 (Others)", "count": total_objects, "icon": "QuestionFilled"}
+                ]
         
         cursor.close()
         conn.close()

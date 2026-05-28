@@ -18,8 +18,10 @@ async def detect_frame(request: dict, current_user: dict = Depends(get_current_u
         if not camera_detection_service.is_running:
             return {"success": False, "message": "摄像头检测未启动"}
             
-        # 获取图像数据
+        # 获取参数
         image_data = request.get("image")
+        model_name = request.get("model_name", "best")
+        
         if not image_data:
             return {"success": False, "message": "缺少图像数据"}
             
@@ -34,8 +36,12 @@ async def detect_frame(request: dict, current_user: dict = Depends(get_current_u
         if image is None:
             return {"success": False, "message": "图像解码失败"}
             
-        # 调用检测服务 (传入 user_id 用于历史记录)
-        result = camera_detection_service.detect_image(image, user_id=current_user["user_id"])
+        # 调用检测服务 (传入 user_id 用于历史记录，传入 model_name)
+        result = camera_detection_service.detect_image(
+            image, 
+            user_id=current_user["user_id"],
+            model_name=model_name
+        )
         
         return {
             "success": True,

@@ -16,7 +16,8 @@
     <!-- 模型选择器 -->
     <div class="model-selector">
       <el-select v-model="selectedModel" style="width: 180px">
-        <el-option label="我的模型" value="best" />
+        <el-option label="推荐模型 (Best)" value="best" />
+        <el-option label="最新模型 (Last)" value="last" />
       </el-select>
     </div>
 
@@ -88,7 +89,7 @@
 
         <!-- 摄像头检测区域 -->
         <div v-if="activeTab === 'camera'" class="camera-section">
-          <CameraDetection @detected="handleCameraDetected" />
+          <CameraDetection :model-name="selectedModel" @detected="handleCameraDetected" />
         </div>
 
         <!-- 图片对比区域 -->
@@ -171,12 +172,14 @@
             <span class="card-title">识别清单</span>
           </div>
           
-          <div v-if="detectionResult && detectionResult.boxes && detectionResult.boxes.length > 0" class="detection-list">
-            <div v-for="(box, index) in detectionResult.boxes" :key="index" class="detection-item">
-              <span class="item-name">{{ box.class_name }}</span>
-              <span class="item-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
-            </div>
-            <div class="total-count">共检测到 {{ detectionResult.total_objects }} 个目标</div>
+          <div v-if="detectionResult && detectionResult.boxes && detectionResult.boxes.filter(b => b.confidence > 0).length > 0" class="detection-list">
+            <transition-group name="list">
+              <div v-for="(box, index) in detectionResult.boxes.filter(b => b.confidence > 0)" :key="index + '-' + box.x1" class="detection-item">
+                <span class="item-name">{{ box.chinese_name || box.class_name }}</span>
+                <span class="item-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
+              </div>
+            </transition-group>
+            <div class="total-count">共检测到 {{ detectionResult.boxes.filter(b => b.confidence > 0).length }} 个目标</div>
           </div>
           
           <div v-else class="empty-state">
@@ -888,5 +891,19 @@ const handleCameraDetected = (data) => {
   border-radius: 8px;
   padding: 10px;
   font-size: 14px;
+}
+
+/* 列表动画 */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.list-move {
+  transition: transform 0.3s ease;
 }
 </style>

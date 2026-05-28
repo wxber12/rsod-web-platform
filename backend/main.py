@@ -10,7 +10,12 @@ from app.api.history import router as history_router
 from app.api.profile import router as profile_router
 from app.api.camera import router as camera_router
 import os
+from app.config import settings
 from app.utils.paths import Paths
+print(f"DEBUG: APP_NAME={settings.APP_NAME}")
+print(f"DEBUG: UPLOAD_DIR={settings.UPLOAD_DIR}")
+print(f"DEBUG: MINIO_ENDPOINT={settings.MINIO_ENDPOINT}")
+
 # 在应用启动时自动检查并创建必要的目录结构
 Paths.init_all_dirs()
 

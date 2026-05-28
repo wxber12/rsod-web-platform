@@ -108,6 +108,13 @@ const totalObjects = ref(0);
 const detectionTime = ref(0);
 const inferenceInterval = ref(2);
 
+const props = defineProps({
+  modelName: {
+    type: String,
+    default: 'best'
+  }
+});
+
 const emit = defineEmits(['detected']);
 
 let videoStream = null;
@@ -201,27 +208,35 @@ const performDetection = async () => {
   const captureCanvas = captureCanvasRef.value;
   const ctx = captureCanvas.getContext('2d');
   
-  // 截取当前帧
+  // 🌟 核心修复：截取前先清空，并确保图像平铺在 640x480 区域
+  ctx.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
   ctx.drawImage(videoRef.value, 0, 0, captureCanvas.width, captureCanvas.height);
   
-  // 转换为 Base64
-  const imageData = captureCanvas.toDataURL('image/jpeg', 0.7);
+  // 转换为 Base64，质量适当提高到 0.8 以保留细节
+  const imageData = captureCanvas.toDataURL('image/jpeg', 0.8);
   
   try {
     isDetecting.value = true;
-    const response = await detectFrame({ image: imageData });
+    console.log(`📸 [DEBUG] 正在发送实时帧检测请求 (模型: ${props.modelName})...`);
+    const response = await detectFrame({ 
+      image: imageData,
+      model_name: props.modelName 
+    });
     
     if (response.success) {
       const data = response.data;
+      console.log(`✅ [DEBUG] 检测成功, 发现目标: ${data.total_objects} 个`);
       fps.value = data.fps;
       totalObjects.value = data.total_objects;
       detectionTime.value = data.detection_time;
       drawBoxes(data.boxes);
-      // 向父组件同步结果，用于更新右侧清单和诊断建议
+      // 向父组件同步结果
       emit('detected', data);
+    } else {
+      console.warn("⚠️ [DEBUG] 后端返回检测失败:", response.message);
     }
   } catch (error) {
-    console.error('检测请求失败:', error);
+    console.error('❌ [DEBUG] 实时检测网络错误:', error);
   } finally {
     isDetecting.value = false;
   }
@@ -240,7 +255,7 @@ const drawBoxes = (boxes) => {
   const scaleX = canvas.width / 640;
   const scaleY = canvas.height / 480;
 
-  boxes.forEach(box => {
+  boxes.filter(box => box.confidence > 0).forEach(box => {
     const x1 = box.x1 * scaleX;
     const y1 = box.y1 * scaleY;
     const x2 = box.x2 * scaleX;
@@ -254,7 +269,11 @@ const drawBoxes = (boxes) => {
     ctx.strokeRect(x1, y1, width, height);
 
     // 绘制标签
-    const label = `${box.chinese_name} ${(box.confidence * 100).toFixed(0)}%`;
+    // 对于 last 模型，不显示置信度数值
+    const label = props.modelName === 'last' 
+      ? `${box.chinese_name}` 
+      : `${box.chinese_name} ${(box.confidence * 100).toFixed(0)}%`;
+    
     ctx.font = '14px Arial';
     const labelWidth = ctx.measureText(label).width + 10;
     
