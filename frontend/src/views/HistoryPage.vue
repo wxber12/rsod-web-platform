@@ -31,6 +31,7 @@
         <el-option label="单图检测" value="single" />
         <el-option label="批量检测" value="batch" />
         <el-option label="视频检测" value="video" />
+        <el-option label="摄像头检测" value="camera" />
       </el-select>
       
       <el-button type="primary" plain @click="fetchHistory">
@@ -273,7 +274,8 @@ const getTypeText = (type) => {
   const map = {
     single: "单图检测",
     batch: "批量检测",
-    video: "视频检测"
+    video: "视频检测",
+    camera: "实时监控"
   };
   return map[type] || type;
 };
@@ -282,7 +284,8 @@ const getTypeTag = (type) => {
   const map = {
     single: "",
     batch: "success",
-    video: "warning"
+    video: "warning",
+    camera: "danger"
   };
   return map[type] || "";
 };

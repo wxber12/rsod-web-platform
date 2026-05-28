@@ -7,10 +7,9 @@ from app.config import settings
 
 def ensure_directories():
     """
-    检查并创建必要的静态文件目录
+    检查并创建必要的临时上传目录
     """
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    os.makedirs(settings.RESULT_DIR, exist_ok=True)
 
 
 async def save_upload_file(file: UploadFile, upload_dir: str) -> str:

@@ -36,6 +36,15 @@ export const detectVideo = (data) => {
   })
 }
 
+// 摄像头帧检测接口
+export const detectFrame = (data) => {
+  return request({
+    url: '/camera/detect',
+    method: 'post',
+    data,
+  });
+};
+
 // 获取检测历史
 export const getDetectionHistory = (params) => {
   return request({
