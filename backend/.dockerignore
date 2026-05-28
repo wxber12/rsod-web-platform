@@ -1,0 +1,14 @@
+.env
+.env.*
+__pycache__
+*.pyc
+node_modules
+.git
+.idea
+.vscode
+runs/
+static/uploads/
+static/results/
+data/
+*.log
+.DS_Store

@@ -1,0 +1,81 @@
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: rsod-postgres
+    environment:
+      POSTGRES_USER: my_user
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: my_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U my_user -d my_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7
+    container_name: rsod-redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # MinIO
+  minio:
+    image: minio/minio:latest
+    container_name: rsod-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend (FastAPI + YOLO) — 直接使用预构建镜像
+  backend:
+    image: rsod-web-platform-backend:latest
+    container_name: rsod-backend
+    environment:
+      DB_HOST: postgres
+      DB_NAME: my_db
+      DB_USER: my_user
+      DB_PASSWORD: 123456
+      DB_PORT: 5432
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # Frontend (Vue + Nginx) — 直接使用预构建镜像
+  frontend:
+    image: rsod-web-platform-frontend:latest
+    container_name: rsod-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

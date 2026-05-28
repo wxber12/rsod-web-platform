@@ -1,32 +1,73 @@
-// router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import index from "../views/index.vue"; // 你的检测页面
-import Detection from "../views/Detection.vue";
-import inference from "../views/Inference.vue"; // Yolo 推理验证⻚⾯
-// 路由配置
 
 const routes = [
   {
     path: "/",
-    name: "index",
-    component: index, // 默认打开就是检测页面
+    redirect: "/login",
+  },
+  {
+    path: "/login",
+    name: "登录",
+    component: () => import("../views/LoginPage.vue"),
+  },
+  {
+    path: "/register",
+    name: "注册",
+    component: () => import("../views/RegisterPage.vue"),
+  },
+  {
+    path: "/forgot-password",
+    name: "忘记密码",
+    component: () => import("../views/ForgotPasswordPage.vue"),
   },
   {
     path: "/detection",
-    name: "detection",
-    component: Detection, // 默认打开这个带切换模式的页面
+    name: "智能检测",
+    component: () => import("../views/DetectionPage.vue"),
   },
   {
-    path: "/inference",
-    name: "inference",
-    component: inference, // 默认打开就是检测⻚⾯
+    path: "/history",
+    name: "历史记录",
+    component: () => import("../views/HistoryPage.vue"),
+  },
+  {
+    path: "/qa",
+    name: "AI问答",
+    component: () => import("../views/QAPage.vue"),
+  },
+  {
+    path: "/targets",
+    name: "目标库",
+    component: () => import("../views/TargetsPage.vue"),
+  },
+  {
+    path: "/profile",
+    name: "个人中心",
+    component: () => import("../views/ProfilePage.vue"),
+  },
+  {
+    path: "/reset-password",
+    name: "重置密码",
+    component: () => import("../views/ResetPasswordPage.vue"),
   },
 ];
 
-// 创建路由实例
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("token");
+  const authPaths = ["/login", "/register", "/forgot-password" ,"/reset-password"];
+
+  if (authPaths.includes(to.path)) {
+    next();
+  } else if (!token) {
+    next("/login");
+  } else {
+    next();
+  }
 });
 
 export default router;

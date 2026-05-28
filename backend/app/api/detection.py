@@ -1,10 +1,11 @@
 import os
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from typing import List
+from app.api.profile import get_current_user
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
 from app.config import settings
-from app.models.schemas import SingleDetectionResponse, HistoryResponse, TargetListResponse, TargetItem
-from datetime import datetime
+from app.models.schemas import SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, TargetListResponse
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 
@@ -14,13 +15,14 @@ ensure_directories()
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
         file: UploadFile = File(...),
-        model_name: str = Form("pest-v1")
+        model_name: str = Form("best_rsod"),
+        current_user: dict = Depends(get_current_user)
 ):
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
 
-        result = detection_service.detect_single_image(image_path, model_name)
+        result = detection_service.detect_single_image(image_path, model_name, user_id=current_user["user_id"])
 
         return SingleDetectionResponse(
             success=True,
@@ -31,15 +33,81 @@ async def detect_single_image(
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
 
 
+@router.post("/batch", response_model=BatchDetectionResponse)
+async def detect_batch(
+        files: List[UploadFile] = File(...),
+        model_name: str = Form("best_rsod"),
+        current_user: dict = Depends(get_current_user)
+):
+    try:
+        image_paths = []
+        for file in files:
+            filename = await save_upload_file(file, settings.UPLOAD_DIR)
+            image_path = os.path.join(settings.UPLOAD_DIR, filename)
+            image_paths.append(image_path)
+
+        results = detection_service.detect_batch_images(image_paths, model_name, user_id=current_user["user_id"])
+
+        return BatchDetectionResponse(
+            success=True,
+            message=f"成功检测 {len(results)} 张图片",
+            data=results
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"批量检测失败: {str(e)}")
+
+
+@router.post("/video", response_model=VideoDetectionResponse)
+async def detect_video(
+        file: UploadFile = File(...),
+        model_name: str = Form("best_rsod"),
+        current_user: dict = Depends(get_current_user)
+):
+    try:
+        filename = await save_upload_file(file, settings.UPLOAD_DIR)
+        video_path = os.path.join(settings.UPLOAD_DIR, filename)
+
+        result = detection_service.detect_video(video_path, model_name, user_id=current_user["user_id"])
+
+        return VideoDetectionResponse(
+            success=True,
+            message="视频检测成功",
+            data=result
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"视频检测失败: {str(e)}")
+
+
+@router.get("/models")
+async def get_available_models(current_user: dict = Depends(get_current_user)):
+    """获取可用模型列表"""
+    models_dir = detection_service.models_dir
+    models = []
+    for pt_file in sorted(models_dir.glob("*.pt")):
+        model_name = pt_file.stem
+        # 尝试获取模型的类别信息
+        try:
+            model = detection_service._get_or_load_model(model_name)
+            class_names = detection_service.class_names.get(model_name, {})
+            classes = list(class_names.values()) if isinstance(class_names, dict) else []
+        except Exception:
+            classes = []
+        models.append({
+            "name": model_name,
+            "classes": classes,
+            "size_mb": round(pt_file.stat().st_size / 1024 / 1024, 2)
+        })
+    return {"success": True, "data": models}
+
+
 @router.get("/targets/list", response_model=TargetListResponse)
-async def get_target_list():
+async def get_targets():
+    """获取目标库列表"""
     targets = [
-        TargetItem(id=0, name="airplane", chinese_name="飞机", description="固定翼飞机、直升机等"),
-        TargetItem(id=1, name="oil_tank", chinese_name="油罐", description="储油罐、化工罐等"),
-        TargetItem(id=2, name="playground", chinese_name="操场", description="运动场、操场等"),
-        TargetItem(id=3, name="building", chinese_name="建筑物", description="各类建筑物"),
-        TargetItem(id=4, name="ship", chinese_name="船舶", description="各类船舶"),
-        TargetItem(id=5, name="pest", chinese_name="农业虫害", description="农作物病虫害"),
+        {"id": 1, "name": "飞机", "count": 1250, "icon": "Plane"},
+        {"id": 2, "name": "油罐", "count": 840, "icon": "Oiltank"},
+        {"id": 3, "name": "立交桥", "count": 420, "icon": "Overpass"},
+        {"id": 4, "name": "操场", "count": 310, "icon": "Playground"}
     ]
     return TargetListResponse(
         success=True,

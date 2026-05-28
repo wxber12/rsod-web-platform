@@ -1,0 +1,13 @@
+{
+  "model_name": "yolo11n",
+  "trained_at": "2026-05-27 20:14:41",
+  "elapsed_seconds": 719.8,
+  "dataset": "D:\\rsod-web-platform\\backend\\data\\rsod\\yolo_dataset\\rsod.yaml",
+  "weights": "D:\\rsod-web-platform\\backend\\models\\rsod\\best.pt",
+  "metrics": {
+    "mAP50": 0.9372518916580941,
+    "mAP50-95": 0.6880819493386309,
+    "precision": 0.9135472146956771,
+    "recall": 0.9232008154677227
+  }
+}
