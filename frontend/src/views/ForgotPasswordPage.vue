@@ -17,13 +17,17 @@
       >
         <el-form-item prop="email">
           <el-input
-            v-model="forgotForm.email"
+            v-model.trim="forgotForm.email"
             type="email"
             placeholder="请输入您的注册邮箱"
             size="large"
-            prefix-icon="Message"
+            clearable
             @keyup.enter="handleSubmit"
-          />
+          >
+            <template #prefix>
+              <el-icon><Message /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
 
         <el-form-item>
@@ -64,48 +68,54 @@ const forgotRules = {
   ],
 };
 
-const handleSubmit = () => {
-  // 1. 强制在控制台留痕，只要点了按钮这行必出
-  console.log("👉 按钮点击事件被成功触发了！");
-
-  if (!forgotFormRef.value) {
-    ElMessage.error("前端错误：表单 ref 绑定失败，组件未加载完毕！");
+const handleSubmit = async () => {
+  // 🌟 终极调试：如果这都不弹窗，说明按钮没点上
+  window.alert("点到了按钮！正在处理...");
+  
+  // 1. 立即打印日志
+  console.log("🔥 [DEBUG] 找回密码按钮被点击了！输入内容:", forgotForm.email);
+  
+  // 2. 基本非空校验（跳过复杂的 validate 提高成功率）
+  if (!forgotForm.email || !forgotForm.email.includes('@')) {
+    console.warn("⚠️ [DEBUG] 邮箱格式看起来不对:", forgotForm.email);
+    ElMessage.warning("请输入有效的邮箱地址！");
     return;
   }
 
-  forgotFormRef.value.validate(async (valid) => {
-    if (valid) {
-      isLoading.value = true; // 开始加载
-      try {
-        console.log("🚀 前端格式校验通过！准备向后端发送数据:", forgotForm.email);
-
-        // 调用你的 auth.js 接口
-        const res = await forgotPassword({ email: forgotForm.email });
-
-        console.log("📦 后端成功响应了:", res);
-        ElMessage.success(res.message || "重置链接已发送到您的邮箱，请去后端查看！");
-
-      } catch (error) {
-        // 🌟 重点抓取：把隐藏的网络错误直接通过弹窗逼出来！
-        console.error("🚨 网络请求彻底失败，详细错误信息如下:", error);
-
-        // 如果后端有响应（比如返回了 400 提示邮箱未注册）
-        if (error.response) {
-          const apiMessage = error.response.data?.message || error.response.data?.detail || "后端拒绝了请求";
-          ElMessage.error(`后端报错 (${error.response.status}): ${apiMessage}`);
-        } else {
-          // 如果连响应都没有（比如跨域失败、或者 8000 端口压根连不上）
-          ElMessage.error("网络连接失败或超时！请检查后端配置或控制台报错。");
-        }
-      } finally {
-        isLoading.value = false; // 结束加载
-      }
+  console.log("🚀 [DEBUG] 校验通过，准备发起网络请求...");
+  isLoading.value = true;
+  
+  try {
+    // 3. 发起请求
+    const res = await forgotPassword({ email: forgotForm.email });
+    console.log("✅ [DEBUG] 后端响应成功:", res);
+    
+    // 兼容不同的后端返回格式
+    const isSuccess = res.code === 200 || res.success === true;
+    
+    if (isSuccess) {
+      ElMessage.success(res.message || "重置链接已发送，请查收您的邮箱！");
     } else {
-      console.warn("⚠️ 邮箱格式验证未通过，被 Element 拦截");
-      // 🌟 必须加上这一行，用户点击没反应时才会弹出提示
-      ElMessage.warning("邮箱格式不正确，请检查输入的邮箱地址！");
+      console.warn("🧐 [DEBUG] 后端返回了非成功状态码:", res);
+      ElMessage.warning(res.message || "发送失败，请检查邮箱是否已注册");
     }
-  });
+  } catch (error) {
+    console.error("❌ [DEBUG] 网络请求发生灾难性错误:", error);
+    
+    let errorDetail = "未知错误";
+    if (error.response) {
+      errorDetail = `后端报错 (${error.response.status}): ${JSON.stringify(error.response.data)}`;
+    } else if (error.request) {
+      errorDetail = "请求已发出但未收到响应，请检查后端 8000 端口是否存活";
+    } else {
+      errorDetail = error.message;
+    }
+    
+    ElMessage.error("发送失败：" + errorDetail);
+  } finally {
+    isLoading.value = false;
+    console.log("🏁 [DEBUG] 请求流程结束。");
+  }
 };
 </script>
 

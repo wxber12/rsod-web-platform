@@ -240,7 +240,7 @@ import {
   VideoPlay,
   VideoCamera
 } from "@element-plus/icons-vue";
-import CameraDetection from "../components/CameraDetection.vue";
+import CameraDetection from "./CameraDetection.vue";
 import { ElMessage } from "element-plus";
 import { detectSingleImage, detectBatchImages, detectVideo } from "../api/detection"; // 引入检测 API
 
@@ -303,11 +303,27 @@ const functionTabs = [
 const fileInputs = ref([]);
 
 const handleTabClick = (key) => {
+  // 🌟 切换 Tab 时主动清理上一个模式遗留的结果，防止 UI 混乱
+  if (activeTab.value !== key) {
+    resetDetectionState();
+  }
+  
   activeTab.value = key;
   const input = document.querySelector(`.function-tab[data-key="${key}"] .file-input`);
   if (input) {
     input.click();
   }
+};
+
+// 🌟 抽取统一的状态重置函数
+const resetDetectionState = () => {
+  originalImage.value = "";
+  resultImage.value = "";
+  originalVideo.value = "";
+  resultVideo.value = "";
+  detectionResult.value = null;
+  batchResults.value = [];
+  isDetecting.value = false;
 };
 
 const handleFileChange = async (event, tabKey) => {
@@ -316,6 +332,9 @@ const handleFileChange = async (event, tabKey) => {
   let files = Array.from(event.target.files);
   if (!files || files.length === 0) return;
 
+  // 🌟 在开始新的检测请求前，彻底清空旧数据
+  resetDetectionState();
+  
   // 过滤掉非影像文件（尤其是文件夹上传时可能带入的系统文件）
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.webp'];
   const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv'];
@@ -334,21 +353,11 @@ const handleFileChange = async (event, tabKey) => {
   activeTab.value = tabKey;
   isDetecting.value = true;
   
-  // 初始化预览
+  // 初始化预览 (已在 resetDetectionState 中重置过，这里根据模式设置预览源)
   if (tabKey === 'single') {
     originalImage.value = URL.createObjectURL(files[0]);
-    resultImage.value = "";
-    originalVideo.value = "";
-    resultVideo.value = "";
-    detectionResult.value = null;
   } else if (tabKey === 'video') {
     originalVideo.value = URL.createObjectURL(files[0]);
-    resultVideo.value = "";
-    originalImage.value = "";
-    resultImage.value = "";
-    detectionResult.value = null;
-  } else {
-    batchResults.value = [];
   }
 
   try {

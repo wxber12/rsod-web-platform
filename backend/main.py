@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+import time
 from app.api.auth import router as auth_router
 from app.api.detection import router as detection_router # 导入 detection.py 中的 router
 from app.api.ai import router as ai_router
@@ -13,6 +15,14 @@ from app.utils.paths import Paths
 Paths.init_all_dirs()
 
 app = FastAPI()
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    print(f"DEBUG: {request.method} {request.url.path} - {response.status_code} ({process_time:.2f}ms)")
+    return response
 
 os.makedirs("static", exist_ok=True)
 os.makedirs("runs", exist_ok=True)

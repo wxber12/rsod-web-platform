@@ -7,11 +7,6 @@
     </div>
 
     <div class="header-actions">
-      <el-tag type="success" effect="light" class="status-tag">
-        <el-icon class="el-icon--left"><Check /></el-icon>
-        检测完成
-      </el-tag>
-
       <div class="action-icons">
         <el-icon class="action-icon"><Grid /></el-icon>
         <el-icon class="action-icon"><Bell /></el-icon>
@@ -46,7 +41,6 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import {
-  Check,
   Grid,
   Bell,
   QuestionFilled,
@@ -65,6 +59,9 @@ const userInfo = ref({
 });
 
 const fetchUserInfo = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return; // 🌟 如果没有 token，不发请求，避免登录前弹出报错
+  
   try {
     const res = await request.get('/profile/');
     userInfo.value = res;

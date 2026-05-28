@@ -23,7 +23,7 @@ import Header from "./components/Header.vue";
 const route = useRoute();
 
 const isAuthPage = computed(() => {
-  const authPaths = ["/login", "/register", "/forgot-password"];
+  const authPaths = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
   return authPaths.includes(route.path);
 });
 </script>
