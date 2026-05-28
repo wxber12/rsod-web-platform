@@ -1,62 +1,60 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <div class="login-header">
-        <div class="logo-icon">
-          <el-icon :size="40" color="#ffffff"><Picture /></el-icon>
+      <div class="card-inner">
+        <div class="brand">
+          <div class="logo-icon">
+            <el-icon :size="56" color="#CFB53B"><Crop /></el-icon>
+          </div>
+          <h1 class="title">农业病虫害智能识别系统</h1>
+          <p class="subtitle">Agricultural Pest Intelligence</p>
         </div>
-        <h1 class="login-title">遥感目标智能检测平台</h1>
-        <p class="login-subtitle">多场景遥感影像 · 精准目标检测</p>
-      </div>
 
-      <el-form
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        class="login-form"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
-            size="large"
-            @keyup.enter="handleLogin"
-          >
-            <template #prefix>
-              <el-icon><User /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+        <el-form
+          ref="loginFormRef"
+          :model="loginForm"
+          :rules="loginRules"
+          class="login-form"
+        >
+          <el-form-item prop="username">
+            <el-input
+              v-model="loginForm.username"
+              placeholder="用户名 / 手机号"
+              size="large"
+              class="custom-input"
+              @keyup.enter="handleLogin"
+            >
+              <template #prefix><el-icon><User /></el-icon></template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="password">
-          <el-input
-            v-model="loginForm.password"
-            type="password"
-            placeholder="请输入密码"
-            size="large"
-            @keyup.enter="handleLogin"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              placeholder="密码"
+              size="large"
+              class="custom-input"
+              @keyup.enter="handleLogin"
+            >
+              <template #prefix><el-icon><Lock /></el-icon></template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item class="form-actions">
-          <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
-          <router-link to="/forgot-password" class="forgot-password">忘记密码?</router-link>
-        </el-form-item>
+          <div class="form-options">
+            <el-checkbox v-model="loginForm.remember" class="remember-check">记住账号</el-checkbox>
+            <router-link to="/forgot-password" class="forgot-link">忘记密码?</router-link>
+          </div>
 
-        <el-form-item>
           <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="handleLogin">
             登录
           </el-button>
-        </el-form-item>
-      </el-form>
+        </el-form>
 
-      <div class="register-link">
-        <span>还没有账号？</span>
-        <router-link to="/register">立即注册</router-link>
+        <div class="register-prompt">
+          <span>尚未注册？</span>
+          <router-link to="/register" class="register-link">立即创建账号</router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -64,13 +62,13 @@
 
 <script setup>
 import { ref, reactive } from "vue";
-import { Picture, User, Lock } from "@element-plus/icons-vue";
+import { Crop, User, Lock } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus"; // 引入 ElementPlus 弹窗提示组件
-import { login } from "../api/auth";        // 引入真实 API 接口
+import { ElMessage } from "element-plus";
+import { login } from "../api/auth";
 
 const router = useRouter();
-const loading = ref(false); // 登录状态控制
+const loading = ref(false);
 
 const loginForm = reactive({
   username: "",
@@ -91,13 +89,11 @@ const loginRules = {
 
 const loginFormRef = ref(null);
 
-// 核心登录逻辑
 const handleLogin = () => {
   loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true;
       try {
-        // 1. 只把后端需要的账号密码剥离出来丢给接口
         const res = await login({
           username: loginForm.username,
           password: loginForm.password
@@ -105,23 +101,13 @@ const handleLogin = () => {
 
         console.log("前端接收到的登录响应数据：", res);
 
-        // 2. 全兼容判断：无论你的 request.js 拦截器剥皮了没有，只要有一层拿到 code===200 就放行
         if (res.code === 200 || (res.data && res.data.code === 200)) {
-
-          // 根据剥包状态自动获取正确的数据源
           const responseData = res.code === 200 ? res : res.data;
-
-          // 弹出温暖快乐的登录成功小浮窗
           ElMessage.success(responseData.message || "登录成功，欢迎回来！");
-
-          // 3. 稳妥取出那一长串身份令牌 token，保存到浏览器的本地存储中
           const token = responseData.data.token;
           localStorage.setItem("token", token);
-
-          // 4. 破门而入，直接跳转至遥感大厅
           router.push("/detection");
         } else {
-          // 接收到后端返回的 400 账号错误提示等数据包
           const errorMsg = res.message || res.data?.message || "用户名或密码错误";
           ElMessage.error(errorMsg);
         }
@@ -133,7 +119,7 @@ const handleLogin = () => {
           ElMessage.error("未能连接到后端服务，请确认 FastAPI 后端和 Docker 数据库均已开启！");
         }
       } finally {
-        loading.value = false; // 解冻按钮状态
+        loading.value = false;
       }
     }
   });
@@ -141,94 +127,178 @@ const handleLogin = () => {
 </script>
 
 <style scoped>
-/* 保持原本非常优雅漂亮的 UI 绿色渐变样式 */
 .login-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  position: relative;
+  background-image: url('./background/2.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
 }
+
+.login-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.login-container::after {
+  content: "🌾🌱🍃";
+  position: absolute;
+  bottom: 5%;
+  right: 3%;
+  font-size: 140px;
+  opacity: 0.15;
+  font-family: system-ui;
+  pointer-events: none;
+  white-space: pre;
+  z-index: 1;
+}
+
 .login-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 40px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: 90%;
+  max-width: 560px;
+  background: rgba(255, 250, 240, 0.75);
+  backdrop-filter: blur(12px);
+  border-radius: 40px;
+  padding: 52px 48px;
+  box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 245, 215, 0.6);
+  z-index: 2;
+  transition: transform 0.3s ease;
 }
-.login-header {
+.login-card:hover {
+  transform: scale(1.01);
+}
+
+.card-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 48px;
 }
 .logo-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  border-radius: 12px;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #1A3A32 0%, #2B5A48 100%);
+  border-radius: 50%;
+  margin: 0 auto 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 20px 30px -10px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+  border: 2px solid rgba(207, 181, 59, 0.5);
 }
-.login-title {
-  font-size: 22px;
+.title {
+  font-family: Georgia, "Times New Roman", "PingFang SC", "Microsoft YaHei", serif;
+  font-size: 38px;
   font-weight: 600;
-  color: #1f2937;
+  line-height: 1.4;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #1A3A32 0%, #3B6B58 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin-bottom: 6px;
 }
-.login-subtitle {
+.subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 13px;
-  color: #6b7280;
+  letter-spacing: 1.5px;
+  color: #A08C5E;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
+
 .login-form {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
-.form-actions {
+.custom-input :deep(.el-input__wrapper) {
+  background-color: rgba(254, 249, 240, 0.9);
+  border-radius: 20px;
+  box-shadow: none;
+  border: 1px solid #E5DAC8;
+  transition: all 0.2s;
+  padding: 4px 16px;
+}
+.custom-input :deep(.el-input__wrapper:hover) {
+  border-color: #CFB53B;
+  background-color: rgba(254, 249, 240, 1);
+}
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #1A3A32;
+  box-shadow: 0 0 0 3px rgba(26, 58, 50, 0.1);
+}
+.custom-input :deep(.el-input__inner) {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+}
+
+.form-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin: 16px 0 32px;
 }
-:deep(.el-form-item__content) {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.forgot-password {
+.remember-check :deep(.el-checkbox__label) {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
-  color: #27ae60;
-  cursor: pointer;
+  color: #2C3E2B;
+}
+.forgot-link {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #CFB53B;
   text-decoration: none;
+  font-weight: 500;
+  text-shadow: 0 0 2px rgba(0,0,0,0.1);
 }
-.forgot-password:hover {
-  text-decoration: underline;
+.forgot-link:hover {
+  color: #1A3A32;
 }
+
 .login-btn {
   width: 100%;
-  height: 44px;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  height: 56px;
+  border-radius: 40px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1A3A32 0%, #2B5A48 100%);
   border: none;
+  letter-spacing: 1px;
+  transition: all 0.3s;
 }
 .login-btn:hover {
-  background: linear-gradient(135deg, #219653 0%, #27ae60 100%);
-  opacity: 0.9;
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px -10px rgba(26, 58, 50, 0.5);
+  background: linear-gradient(135deg, #2B5A48 0%, #1A3A32 100%);
+}
+
+.register-prompt {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: #2C3E2B;
+  padding-top: 20px;
+  border-top: 1px solid rgba(235, 227, 213, 0.6);
 }
 .register-link {
-  text-align: center;
-  font-size: 13px;
-  color: #6b7280;
-}
-.register-link a {
-  color: #27ae60;
-  margin-left: 4px;
-  cursor: pointer;
+  color: #1A3A32;
+  font-weight: 600;
   text-decoration: none;
+  margin-left: 6px;
 }
-.register-link a:hover {
-  text-decoration: underline;
+.register-link:hover {
+  color: #CFB53B;
 }
 </style>

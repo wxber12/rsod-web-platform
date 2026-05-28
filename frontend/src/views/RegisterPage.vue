@@ -1,93 +1,89 @@
 <template>
   <div class="register-container">
     <div class="register-card">
-      <div class="register-header">
-        <div class="logo-icon">
-          <el-icon :size="40" color="#27ae60"><UserFilled /></el-icon>
+      <div class="card-inner">
+        <div class="brand">
+          <div class="logo-icon">
+            <el-icon :size="56" color="#CFB53B"><UserFilled /></el-icon>
+          </div>
+          <h1 class="title">创建账号</h1>
+          <p class="subtitle">开启智慧农业之旅</p>
         </div>
-        <h1 class="register-title">创建账号</h1>
-        <p class="register-subtitle">加入我们，开始智能检测之旅</p>
-      </div>
 
-      <el-form
-        ref="registerFormRef"
-        :model="registerForm"
-        :rules="registerRules"
-        class="register-form"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="registerForm.username"
-            placeholder="请输入用户名"
-            size="large"
-            @keyup.enter="handleRegister"
-          >
-            <template #prefix>
-              <el-icon><User /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+        <el-form
+          ref="registerFormRef"
+          :model="registerForm"
+          :rules="registerRules"
+          class="register-form"
+        >
+          <el-form-item prop="username">
+            <el-input
+              v-model="registerForm.username"
+              placeholder="用户名"
+              size="large"
+              class="custom-input"
+              @keyup.enter="handleRegister"
+            >
+              <template #prefix><el-icon><User /></el-icon></template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="email">
-          <el-input
-            v-model="registerForm.email"
-            type="email"
-            placeholder="请输入邮箱"
-            size="large"
-            @keyup.enter="handleRegister"
-          >
-            <template #prefix>
-              <el-icon><Message /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+          <el-form-item prop="email">
+            <el-input
+              v-model="registerForm.email"
+              type="email"
+              placeholder="邮箱"
+              size="large"
+              class="custom-input"
+              @keyup.enter="handleRegister"
+            >
+              <template #prefix><el-icon><Message /></el-icon></template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="password">
-          <el-input
-            v-model="registerForm.password"
-            type="password"
-            placeholder="请输入密码"
-            size="large"
-            @keyup.enter="handleRegister"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              v-model="registerForm.password"
+              type="password"
+              placeholder="密码"
+              size="large"
+              class="custom-input"
+              @keyup.enter="handleRegister"
+            >
+              <template #prefix><el-icon><Lock /></el-icon></template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item prop="confirmPassword">
-          <el-input
-            v-model="registerForm.confirmPassword"
-            type="password"
-            placeholder="请确认密码"
-            size="large"
-            @keyup.enter="handleRegister"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+          <el-form-item prop="confirmPassword">
+            <el-input
+              v-model="registerForm.confirmPassword"
+              type="password"
+              placeholder="确认密码"
+              size="large"
+              class="custom-input"
+              @keyup.enter="handleRegister"
+            >
+              <template #prefix><el-icon><Lock /></el-icon></template>
+            </el-input>
+          </el-form-item>
 
-        <el-form-item class="agree-terms">
-          <el-checkbox v-model="registerForm.agree" />
-          <span>我已阅读并同意</span>
-          <a href="#" class="terms-link">《服务条款》</a>
-          <span>和</span>
-          <a href="#" class="terms-link">《隐私政策》</a>
-        </el-form-item>
+          <div class="agree-terms">
+            <el-checkbox v-model="registerForm.agree" class="agree-check"/>
+            <span>我已阅读并同意</span>
+            <a href="#" class="terms-link">《服务协议》</a>
+            <span>与</span>
+            <a href="#" class="terms-link">《隐私政策》</a>
+          </div>
 
-        <el-form-item>
-          <el-button type="primary" size="large" class="register-btn" @click="handleRegister">
+          <el-button type="primary" size="large" class="register-btn" :loading="loading" @click="handleRegister">
             注册
           </el-button>
-        </el-form-item>
-      </el-form>
+        </el-form>
 
-      <div class="login-link">
-        <span>已有账号？</span>
-        <router-link to="/login">立即登录</router-link>
+        <div class="login-prompt">
+          <span>已有账号？</span>
+          <router-link to="/login" class="login-link">立即登录</router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -97,11 +93,11 @@
 import { ref, reactive } from "vue";
 import { UserFilled, User, Message, Lock } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus"; // 🌟 引入弹窗提示
-import { register } from "../api/auth";    // 🌟 引入刚刚编写的真实注册 API
+import { ElMessage } from "element-plus";
+import { register } from "../api/auth";
 
 const router = useRouter();
-const loading = ref(false); // 🌟 注册按钮的加载控制动画
+const loading = ref(false);
 const registerFormRef = ref(null);
 
 const registerForm = reactive({
@@ -112,7 +108,6 @@ const registerForm = reactive({
   agree: false,
 });
 
-// 你原本写的非常严谨完善的表单校验规则，保持不变
 const registerRules = {
   username: [
     { required: true, message: "请输入用户名", trigger: "blur" },
@@ -143,9 +138,7 @@ const registerRules = {
   ],
 };
 
-// 🌟 升级为真实的 async/await 注册对接逻辑
 const handleRegister = () => {
-  // 1. 优先检查是否勾选了同意协议 (弹窗提醒)
   if (!registerForm.agree) {
     ElMessage.warning("请先阅读并勾选同意服务条款和隐私政策！");
     return;
@@ -155,20 +148,15 @@ const handleRegister = () => {
     if (valid) {
       loading.value = true;
       try {
-        // 向 FastAPI 发送注册数据，只剥离出后端需要的字段
         const res = await register({
           username: registerForm.username,
           password: registerForm.password,
-          email: registerForm.email // 🌟 将邮箱字段发送给后端
+          email: registerForm.email
         });
 
-        // 兼容 request.js 拦截器剥皮与不剥皮格式
         if (res.code === 200 || (res.data && res.data.code === 200)) {
           const responseData = res.code === 200 ? res : res.data;
-
           ElMessage.success(responseData.message || "注册成功！即将为您跳转到登录页...");
-
-          // 优雅等待 1.5 秒，让用户看清成功提示后，自动路由切回登录页面
           setTimeout(() => {
             router.push("/login");
           }, 1500);
@@ -184,7 +172,7 @@ const handleRegister = () => {
           ElMessage.error("无法连接到后端服务器，请确认 FastAPI 容器已启动！");
         }
       } finally {
-        loading.value = false; // 解冻按钮状态
+        loading.value = false;
       }
     }
   });
@@ -197,87 +185,169 @@ const handleRegister = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  position: relative;
+  background-image: url('./background/2.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  background-color: #1A2A24;
+}
+
+.register-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1;
+}
+
+.register-container::after {
+  content: "🌾🌱🍃";
+  position: absolute;
+  bottom: 5%;
+  left: 3%;
+  font-size: 140px;
+  opacity: 0.2;
+  font-family: system-ui;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .register-card {
-  width: 100%;
-  max-width: 420px;
-  padding: 40px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: 90%;
+  max-width: 560px;
+  background: rgba(255, 250, 240, 0.78);
+  backdrop-filter: blur(12px);
+  border-radius: 40px;
+  padding: 48px 48px;
+  box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 245, 215, 0.6);
+  z-index: 2;
+  transition: transform 0.3s ease;
+}
+.register-card:hover {
+  transform: scale(1.01);
 }
 
-.register-header {
+.card-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
-
 .logo-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  border-radius: 12px;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #1A3A32 0%, #2B5A48 100%);
+  border-radius: 50%;
+  margin: 0 auto 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 20px 30px -10px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+  border: 2px solid rgba(207, 181, 59, 0.5);
 }
-
-.register-title {
-  font-size: 22px;
+.title {
+  font-family: Georgia, "Times New Roman", "PingFang SC", "Microsoft YaHei", serif;
+  font-size: 36px;
   font-weight: 600;
-  color: #1f2937;
+  line-height: 1.4;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #1A3A32 0%, #3B6B58 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin-bottom: 6px;
 }
-
-.register-subtitle {
+.subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 13px;
-  color: #6b7280;
+  letter-spacing: 1.5px;
+  color: #A08C5E;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 
 .register-form {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+}
+.custom-input :deep(.el-input__wrapper) {
+  background-color: rgba(254, 249, 240, 0.9);
+  border-radius: 20px;
+  box-shadow: none;
+  border: 1px solid #E5DAC8;
+  transition: all 0.2s;
+  padding: 4px 16px;
+}
+.custom-input :deep(.el-input__wrapper:hover) {
+  border-color: #CFB53B;
+  background-color: rgba(254, 249, 240, 1);
+}
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #1A3A32;
+  box-shadow: 0 0 0 3px rgba(26, 58, 50, 0.1);
+}
+.custom-input :deep(.el-input__inner) {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
 }
 
 .agree-terms {
   display: flex;
   align-items: center;
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  color: #2C3E2B;
+  margin: 16px 0 24px;
+  gap: 4px;
+  flex-wrap: wrap;
 }
-
 .terms-link {
-  color: #27ae60;
-  margin: 0 4px;
+  color: #CFB53B;
+  text-decoration: none;
 }
-
 .terms-link:hover {
-  text-decoration: underline;
+  color: #1A3A32;
 }
 
 .register-btn {
   width: 100%;
-  height: 44px;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 500;
+  height: 56px;
+  border-radius: 40px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1A3A32 0%, #2B5A48 100%);
+  border: none;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+}
+.register-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px -10px rgba(26, 58, 50, 0.5);
+  background: linear-gradient(135deg, #2B5A48 0%, #1A3A32 100%);
 }
 
-.login-link {
+.login-prompt {
   text-align: center;
-  font-size: 13px;
-  color: #6b7280;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(235, 227, 213, 0.6);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: #2C3E2B;
 }
-
-.login-link a {
-  color: #27ae60;
-  margin-left: 4px;
+.login-link {
+  color: #1A3A32;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 6px;
 }
-
-.login-link a:hover {
-  text-decoration: underline;
+.login-link:hover {
+  color: #CFB53B;
 }
 </style>

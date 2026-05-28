@@ -2,14 +2,14 @@
   <div class="qa-page">
     <div class="page-header">
       <h1 class="page-title">AI 智能问答</h1>
-      <p class="page-subtitle">关于遥感目标检测的任何问题，都可以问我</p>
+      <p class="page-subtitle">关于农业病虫害识别的任何问题，都可以问我</p>
     </div>
 
     <div class="chat-container">
       <div class="chat-messages" ref="messageContainer">
-        <div 
-          v-for="(msg, index) in messages" 
-          :key="index" 
+        <div
+          v-for="(msg, index) in messages"
+          :key="index"
           :class="['message', msg.role === 'user' ? 'user-message' : 'ai-message']"
         >
           <div class="message-avatar">
@@ -38,10 +38,10 @@
           :rows="3"
           @keyup.enter.ctrl="sendMessage"
         />
-        <el-button 
-          type="primary" 
-          class="send-btn" 
-          :loading="sending" 
+        <el-button
+          type="primary"
+          class="send-btn"
+          :loading="sending"
           @click="sendMessage"
           :disabled="!question.trim()"
         >
@@ -65,9 +65,9 @@ const question = ref("");
 const sending = ref(false);
 const messageContainer = ref(null);
 const messages = ref([
-  { 
-    role: 'ai', 
-    content: "你好！我是遥感目标检测AI助手。我可以帮你解答关于飞机、油罐、操场、立交桥、农业病虫害等遥感目标检测的相关问题，也可以为你提供检测结果的详细分析。" 
+  {
+    role: 'ai',
+    content: "你好！我是农业病虫害识别AI助手。我可以帮你解答关于苹果疮痂病、玉米锈病、葡萄黑腐病、番茄早疫病等各类作物病虫害的识别与防治问题，也可以为你提供检测结果的详细分析和防治建议。"
   }
 ]);
 
@@ -97,7 +97,7 @@ const sendMessage = async () => {
     }));
 
     const res = await aiService.askQuestion(currentQuestion, history);
-    
+
     if (res.success) {
       messages.value.push({ role: 'ai', content: res.answer });
     } else {
@@ -106,8 +106,6 @@ const sendMessage = async () => {
   } catch (error) {
     console.error("AI 服务请求失败:", error);
     ElMessage.error(error.message || "AI 助手暂时无法回答，请稍后再试");
-    // 移除刚才发送失败的消息，或者保留并显示错误？
-    // 这里简单处理，不移除，让用户知道发了什么
   } finally {
     sending.value = false;
   }
@@ -118,144 +116,181 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss">
+<style scoped>
+/* 农业主题统一样式（与 LoginPage1.0 和 DetectionPage 保持一致） */
 .qa-page {
-  width: 100%;
-  height: calc(100vh - 120px);
+  min-height: 100vh;
+  padding: 32px 48px;
+  background-image: url('./background/1.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+}
+
+.qa-page::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-header {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 42px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 240, 0.9);
+}
+
+.chat-container {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 252, 245, 0.88);
+  backdrop-filter: blur(16px);
+  border-radius: 48px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 245, 215, 0.6);
+  height: calc(100vh - 180px);
+  min-height: 500px;
+}
 
-  .page-header {
-    margin-bottom: 24px;
-    flex-shrink: 0;
+.chat-messages {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
 
-    .page-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #1f2937;
-      margin-bottom: 8px;
-    }
+.message {
+  display: flex;
+  margin-bottom: 28px;
+  animation: fadeIn 0.3s ease-in-out;
+}
 
-    .page-subtitle {
-      font-size: 14px;
-      color: #6b7280;
-    }
-  }
+.message-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 52px;
+  background: linear-gradient(135deg, #1a3a32, #2b5a48);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  flex-shrink: 0;
+  font-size: 28px;
+}
 
-  .chat-container {
-    flex: 1;
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
+.message-content {
+  background: #fef9f0;
+  padding: 16px 24px;
+  border-radius: 28px;
+  border-top-left-radius: 8px;
+  max-width: 70%;
+  line-height: 1.6;
+  font-size: 18px;
+  color: #1a3a32;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
-    .chat-messages {
-      flex: 1;
-      padding: 24px;
-      overflow-y: auto;
-      scroll-behavior: smooth;
+.message-content.loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-      .message {
-        display: flex;
-        margin-bottom: 24px;
-        animation: fadeIn 0.3s ease-in-out;
+.dot {
+  animation: blink 1.4s infinite both;
+  font-size: 24px;
+  line-height: 1;
+}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
 
-        .message-avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          background-color: #4f46e5;
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-right: 12px;
-          flex-shrink: 0;
-          font-size: 20px;
-        }
+.user-message {
+  flex-direction: row-reverse;
+}
 
-        .message-content {
-          background-color: #f3f4f6;
-          padding: 12px 16px;
-          border-radius: 0 16px 16px 16px;
-          max-width: 80%;
-          line-height: 1.6;
-          font-size: 15px;
-          color: #374151;
-          white-space: pre-wrap;
-          word-break: break-word;
+.user-message .message-avatar {
+  margin-right: 0;
+  margin-left: 16px;
+  background: #cfb53b;
+}
 
-          &.loading {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            
-            .dot {
-              animation: blink 1.4s infinite both;
-              &:nth-child(2) { animation-delay: 0.2s; }
-              &:nth-child(3) { animation-delay: 0.4s; }
-            }
-          }
-        }
+.user-message .message-content {
+  background: #e8f5e9;
+  border-radius: 28px;
+  border-top-right-radius: 8px;
+  color: #1a3a32;
+}
 
-        &.user-message {
-          flex-direction: row-reverse;
+.chat-input {
+  padding: 28px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 20px;
+  background: rgba(255, 252, 245, 0.9);
+}
 
-          .message-avatar {
-            margin-right: 0;
-            margin-left: 12px;
-            background-color: #10b981;
-          }
+.chat-input :deep(.el-textarea__inner) {
+  background-color: rgba(254, 249, 240, 0.9);
+  border-radius: 30px;
+  border: 1px solid #E5DAC8;
+  transition: all 0.2s;
+  padding: 12px 20px;
+  font-size: 16px;
+  resize: none;
+}
 
-          .message-content {
-            background-color: #4f46e5;
-            color: white;
-            border-radius: 16px 0 16px 16px;
-          }
-        }
-      }
-    }
+.chat-input :deep(.el-textarea__inner:focus) {
+  border-color: #1A3A32;
+  box-shadow: 0 0 0 3px rgba(26, 58, 50, 0.1);
+}
 
-    .chat-input {
-      padding: 20px;
-      border-top: 1px solid #e5e7eb;
-      display: flex;
-      gap: 12px;
-      background-color: #f9fafb;
+.send-btn {
+  width: 120px;
+  border-radius: 60px;
+  background: linear-gradient(135deg, #1a3a32, #2b5a48);
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
 
-      :deep(.el-textarea__inner) {
-        border-radius: 8px;
-        resize: none;
-        &:focus {
-          border-color: #4f46e5;
-        }
-      }
+.send-btn:hover {
+  background: linear-gradient(135deg, #2b5a48, #1a3a32);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(26, 58, 50, 0.3);
+}
 
-      .send-btn {
-        height: auto;
-        padding: 0 24px;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.2s;
-
-        &:not(:disabled):hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
-        }
-      }
-    }
-
-    .input-tip {
-      padding: 0 20px 12px;
-      font-size: 12px;
-      color: #9ca3af;
-      text-align: right;
-      background-color: #f9fafb;
-    }
-  }
+.input-tip {
+  padding: 0 28px 20px;
+  font-size: 13px;
+  color: #a08c5e;
+  text-align: right;
 }
 
 @keyframes fadeIn {
@@ -267,5 +302,26 @@ onMounted(() => {
   0% { opacity: 0.2; }
   20% { opacity: 1; }
   100% { opacity: 0.2; }
+}
+
+@media (max-width: 768px) {
+  .qa-page {
+    padding: 24px 24px;
+  }
+  .message-content {
+    max-width: 85%;
+    font-size: 16px;
+  }
+  .chat-messages {
+    padding: 20px;
+  }
+  .chat-input {
+    padding: 20px;
+    flex-direction: column;
+  }
+  .send-btn {
+    width: 100%;
+    height: 48px;
+  }
 }
 </style>

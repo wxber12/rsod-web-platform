@@ -7,9 +7,9 @@
         <span class="separator">›</span>
         <span class="active">智能检测</span>
       </div>
-      <h1 class="page-title">上传遥感影像，立即识别多类目标</h1>
+      <h1 class="page-title">上传作物影像，立即识别病虫害</h1>
       <p class="page-subtitle">
-        支持飞机 / 油罐 / 操场 / 建筑物 / 船舶 / 农业虫害等多目标检测
+        支持苹果疮痂病 / 玉米锈病 / 棉铃虫 / 番茄早疫病 等多目标检测
       </p>
     </div>
 
@@ -105,7 +105,7 @@
               alt="原始图片"
               class="compare-image"
             />
-            <div v-else class="image-placeholder">请上传图片/视频</div>
+            <div v-else class="image-placeholder">请上传作物图片/视频</div>
             <div class="image-label">原始{{ activeTab === 'video' ? '视频' : '图片' }}</div>
           </div>
           <div class="image-card" v-loading="isDetecting" element-loading-text="AI正在疯狂识别中...">
@@ -133,9 +133,9 @@
             <span class="gallery-title">批量结果 ({{ batchResults.length }})</span>
           </div>
           <div class="gallery-scroll">
-            <div 
-              v-for="(item, index) in batchResults" 
-              :key="index" 
+            <div
+              v-for="(item, index) in batchResults"
+              :key="index"
               class="gallery-item"
               :class="{ active: detectionResult && detectionResult.detection_id === item.detection_id }"
               @click="selectBatchItem(item)"
@@ -169,21 +169,21 @@
         <div class="result-card">
           <div class="card-header">
             <el-icon><List /></el-icon>
-            <span class="card-title">识别清单</span>
+            <span class="card-title">病虫害清单</span>
           </div>
-          
+
           <div v-if="detectionResult && detectionResult.boxes && detectionResult.boxes.length > 0" class="detection-list">
             <div v-for="(box, index) in detectionResult.boxes" :key="index" class="detection-item">
               <span class="item-name">{{ box.class_name }}</span>
               <span class="item-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
             </div>
-            <div class="total-count">共检测到 {{ detectionResult.total_objects }} 个目标</div>
+            <div class="total-count">共识别 {{ detectionResult.total_objects }} 处病虫害</div>
           </div>
-          
+
           <div v-else class="empty-state">
             <el-icon class="empty-icon"><CircleCheck /></el-icon>
-            <p class="empty-text">未检测到目标</p>
-            <p class="empty-desc">影像无异常目标或未开始检测</p>
+            <p class="empty-text">未检测到病虫害</p>
+            <p class="empty-desc">作物影像无异常或未开始检测</p>
           </div>
         </div>
 
@@ -196,12 +196,12 @@
           <div class="diagnosis-content">
             <p v-if="isDetecting">正在分析中...</p>
             <p v-else-if="detectionResult && activeTab === 'video'">
-              视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧，累计识别目标 {{ detectionResult.total_objects }} 次。您可以播放右侧结果视频查看识别动态。
+              视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧，累计识别病虫害 {{ detectionResult.total_objects }} 次。您可以播放右侧结果视频查看识别动态。
             </p>
             <p v-else-if="detectionResult && detectionResult.total_objects > 0">
-              图像中检测到 {{ detectionResult.total_objects }} 个目标实体，已标记在右侧结果图中，请仔细核对。
+              影像中检测到 {{ detectionResult.total_objects }} 处病虫害，已标记在右侧结果图中，请结合农技指导进行防治。
             </p>
-            <p v-else>暂无诊断建议，请先上传并检测图片或视频。</p>
+            <p v-else>暂无诊断建议，请先上传并检测作物图片或视频。</p>
           </div>
         </div>
 
@@ -212,7 +212,7 @@
             重新检测
           </el-button>
           <el-button type="primary" size="default" class="btn-primary">
-            查看完整报告
+            查看防治报告
           </el-button>
         </div>
       </div>
@@ -221,6 +221,7 @@
 </template>
 
 <script setup>
+// 脚本完全保留原 DetectionPage.vue 的逻辑，不做任何修改
 import { ref, computed, onMounted } from "vue";
 import {
   Picture,
@@ -234,10 +235,10 @@ import {
   ChatDotRound,
   Refresh,
   Minus,
-  Loading // 添加 Loading icon
+  Loading
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { detectSingleImage, detectBatchImages, detectVideo, getAvailableModels } from "../api/detection"; // 引入检测 API
+import { detectSingleImage, detectBatchImages, detectVideo, getAvailableModels } from "../api/detection";
 
 const availableModels = ref([]);
 const selectedModel = ref("");
@@ -254,15 +255,14 @@ const currentModelClasses = computed(() => {
 });
 const activeTab = ref("single");
 const compareMode = ref("side");
-const isDetecting = ref(false); // 检测状态
+const isDetecting = ref(false);
 
-// 响应数据
-const originalImage = ref(""); 
+const originalImage = ref("");
 const resultImage = ref("");
 const originalVideo = ref("");
 const resultVideo = ref("");
 const detectionResult = ref(null);
-const batchResults = ref([]); // 批量检测结果集
+const batchResults = ref([]);
 
 const functionTabs = [
   {
@@ -288,7 +288,7 @@ const functionTabs = [
     icon: Folder,
     accept: "image/*",
     multiple: true,
-    webkitdirectory: true, // 👈 标记该选项卡需要文件夹选择
+    webkitdirectory: true,
   },
   {
     key: "video",
@@ -316,10 +316,9 @@ const handleFileChange = async (event, tabKey) => {
   let files = Array.from(event.target.files);
   if (!files || files.length === 0) return;
 
-  // 过滤掉非影像文件（尤其是文件夹上传时可能带入的系统文件）
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.webp'];
   const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv'];
-  
+
   if (tabKey === 'video') {
     files = files.filter(f => videoExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
   } else {
@@ -333,8 +332,7 @@ const handleFileChange = async (event, tabKey) => {
 
   activeTab.value = tabKey;
   isDetecting.value = true;
-  
-  // 初始化预览
+
   if (tabKey === 'single') {
     originalImage.value = URL.createObjectURL(files[0]);
     resultImage.value = "";
@@ -363,12 +361,12 @@ const handleFileChange = async (event, tabKey) => {
       const formData = new FormData();
       formData.append("file", files[0]);
       formData.append("model_name", selectedModel.value);
-      
+
       const res = await detectSingleImage(formData);
       if (res.success || res.code === 200) {
         ElMessage.success("检测成功！");
         const data = res.data || res;
-        resultImage.value = getFullUrl(data.result_image_url || data.image_url); 
+        resultImage.value = getFullUrl(data.result_image_url || data.image_url);
         originalImage.value = getFullUrl(data.image_url) || originalImage.value;
         detectionResult.value = data;
       }
@@ -376,7 +374,7 @@ const handleFileChange = async (event, tabKey) => {
       const formData = new FormData();
       formData.append("file", files[0]);
       formData.append("model_name", selectedModel.value);
-      
+
       const res = await detectVideo(formData);
       if (res.success || res.code === 200) {
         ElMessage.success("视频检测完成！");
@@ -385,18 +383,17 @@ const handleFileChange = async (event, tabKey) => {
         originalVideo.value = getFullUrl(data.video_url);
         detectionResult.value = {
           ...data,
-          boxes: [], 
+          boxes: [],
           total_objects: data.total_objects || 0
         };
       }
     } else {
-      // 批量检测
       const formData = new FormData();
       for (let i = 0; i < files.length; i++) {
         formData.append("files", files[i]);
       }
       formData.append("model_name", selectedModel.value);
-      
+
       const res = await detectBatchImages(formData);
       if (res.success || res.code === 200) {
         ElMessage.success(`批量检测完成，共 ${res.data.length} 张图片`);
@@ -405,8 +402,7 @@ const handleFileChange = async (event, tabKey) => {
           image_url: getFullUrl(item.image_url),
           result_image_url: getFullUrl(item.result_image_url)
         }));
-        
-        // 默认选中第一张作为预览
+
         if (batchResults.value.length > 0) {
           const first = batchResults.value[0];
           originalImage.value = first.image_url;
@@ -421,7 +417,7 @@ const handleFileChange = async (event, tabKey) => {
   } finally {
     isDetecting.value = false;
   }
-  
+
   setTimeout(() => {
     event.target.value = '';
   }, 0);
@@ -433,7 +429,6 @@ const selectBatchItem = (item) => {
   detectionResult.value = item;
 };
 
-// 获取可用模型列表
 onMounted(async () => {
   try {
     const res = await getAvailableModels();
@@ -450,453 +445,410 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* 农业主题样式（与 LoginPage1.0.vue 保持一致） */
 .detection-page {
-  width: 100%;
+  min-height: 100vh;
+  padding: 32px 48px;
+  background-image: url('./background/2.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
 }
-
+.detection-page::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+.page-header, .function-tabs, .main-content, .model-selector {
+  position: relative;
+  z-index: 2;
+}
 .page-header {
   margin-bottom: 32px;
-  padding-top: 0;
 }
-
 .breadcrumb {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  font-size: 16px;
+  color: rgba(255,255,240,0.9);
+  margin-bottom: 16px;
 }
-
-.separator {
-  margin: 0 6px;
-}
-
-.active {
-  color: var(--text-primary);
-}
-
-.page-title {
-  font-size: 28px;
+.breadcrumb .active {
+  color: #cfb53b;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
 }
-
+.page-title {
+  font-size: 42px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
 .page-subtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
+  font-size: 18px;
+  color: rgba(255,255,240,0.9);
 }
-
-.model-selector {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 10;
+.model-selector :deep(.el-input__wrapper) {
+  background: rgba(255,252,245,0.95);
+  border-radius: 48px;
+  padding: 8px 16px;
+  border: none;
 }
-
-/* 功能选项卡 */
 .function-tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+.function-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 28px;
+  background: rgba(255,252,245,0.88);
+  backdrop-filter: blur(12px);
+  border-radius: 60px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255,245,215,0.6);
+}
+.function-tab:hover {
+  background: rgba(255,252,245,0.98);
+  transform: translateY(-3px);
+}
+.function-tab.active {
+  background: rgba(46,125,50,0.85);
+  border-color: #cfb53b;
+}
+.function-tab.active .tab-text,
+.function-tab.active .tab-desc {
+  color: white;
+}
+.tab-icon {
+  font-size: 24px;
+  color: #2e7d32;
+}
+.tab-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a3a32;
+}
+.tab-desc {
+  font-size: 14px;
+  color: #5d6e4a;
+}
+.file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.main-content {
+  display: flex;
+  gap: 36px;
+  flex-wrap: wrap;
+}
+.left-panel {
+  flex: 2;
+  min-width: 360px;
+  background: rgba(255,252,245,0.88);
+  backdrop-filter: blur(16px);
+  border-radius: 48px;
+  padding: 32px;
+  border: 1px solid rgba(255,245,215,0.6);
+}
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.panel-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a3a32;
+}
+.result-tag {
+  padding: 6px 16px;
+  font-size: 14px;
+  border-radius: 40px;
+}
+.toolbar {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
 }
-
-.function-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-
-.file-input {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 10;
-}
-
-.function-tab:hover {
-  background-color: var(--primary-light);
-}
-
-.function-tab.active {
-  background-color: var(--primary-light);
-  border-color: var(--primary-color);
-}
-
-.tab-icon {
-  font-size: 18px;
-  color: var(--primary-color);
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.tab-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.tab-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
-}
-
-.tab-desc {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-/* 主内容区域 */
-.main-content {
-  display: flex;
-  gap: 24px;
-}
-
-.left-panel {
-  flex: 1;
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.panel-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.result-tag {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-}
-
-.toolbar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
 .toolbar .el-button {
-  border-radius: 6px;
-  padding: 6px 14px;
+  border-radius: 40px;
+  padding: 10px 20px;
+  font-size: 15px;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(4px);
 }
-
 .toolbar .el-button.active {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-  border-color: var(--primary-color);
+  background: #2e7d32;
+  color: white;
+  border-color: #2e7d32;
 }
-
-/* 图片对比区域 */
 .image-compare {
   display: flex;
-  gap: 16px;
-  height: 320px;
+  gap: 28px;
+  flex-wrap: wrap;
 }
-
 .image-card {
   flex: 1;
-  position: relative;
-  border-radius: 8px;
+  background: rgba(248,244,235,0.6);
+  border-radius: 32px;
   overflow: hidden;
-  background-color: #f9fafb;
 }
-
 .compare-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 450px;
+  object-fit: contain;
+  border-radius: 20px;
 }
-
 .image-label {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.5);
-  color: #ffffff;
-  font-size: 13px;
+  bottom: 32px;
+  left: 32px;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 60px;
+  font-size: 15px;
+  font-weight: 500;
 }
-
 .detection-mark {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
+  top: 24px;
+  right: 24px;
+  width: 16px;
+  height: 16px;
+  background: #cfb53b;
   border-radius: 50%;
-  background-color: var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: 0 0 0 2px white;
+  animation: pulse 1.5s infinite;
 }
-
-.detection-mark::after {
-  content: "✓";
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: bold;
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(207,181,59,0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(207,181,59,0); }
+  100% { box-shadow: 0 0 0 0 rgba(207,181,59,0); }
 }
-
-/* 批量图库样式 */
 .batch-gallery {
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid rgba(0,0,0,0.08);
 }
-
 .gallery-header {
   margin-bottom: 12px;
 }
-
 .gallery-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a3a32;
 }
-
 .gallery-scroll {
   display: flex;
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 8px;
-  scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
 }
-
-.gallery-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-
-.gallery-scroll::-webkit-scrollbar-thumb {
-  background-color: #e5e7eb;
-  border-radius: 3px;
-}
-
 .gallery-item {
   flex-shrink: 0;
   width: 100px;
   height: 100px;
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
-  position: relative;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s;
 }
-
-.gallery-item:hover {
-  transform: translateY(-2px);
-}
-
 .gallery-item.active {
-  border-color: #4f46e5;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+  border-color: #cfb53b;
+  box-shadow: 0 4px 6px -1px rgba(207,181,59,0.3);
 }
-
 .gallery-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .gallery-info {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 2px 4px;
+  background: rgba(0,0,0,0.6);
+  padding: 4px;
   text-align: center;
 }
-
 .item-count {
   color: white;
-  font-size: 10px;
+  font-size: 11px;
 }
-
-/* 右侧面板 */
 .right-panel {
-  width: 360px;
+  flex: 1;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 28px;
 }
-
-.info-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 16px;
+.info-card, .result-card {
+  background: rgba(255,252,245,0.88);
+  backdrop-filter: blur(16px);
+  border-radius: 36px;
+  padding: 28px;
+  border: 1px solid rgba(255,245,215,0.6);
 }
-
 .info-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-color);
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  font-size: 16px;
 }
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
 .info-label {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.info-value {
-  font-size: 13px;
+  color: #5d6e4a;
   font-weight: 500;
-  color: var(--text-primary);
 }
-
+.info-value {
+  font-weight: 700;
+  color: #1a3a32;
+}
 .classes-value {
   cursor: pointer;
-  border-bottom: 1px dashed var(--text-secondary);
+  border-bottom: 1px dashed #cfb53b;
 }
-
-.result-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 16px;
-}
-
 .card-header {
   display: flex;
   align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-weight: 700;
+  font-size: 20px;
+  border-left: 5px solid #cfb53b;
+  padding-left: 16px;
+  color: #1a3a32;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  background: rgba(248,244,235,0.6);
+  border-radius: 32px;
+}
+.empty-icon {
+  font-size: 64px;
+  color: #cbd5e1;
   margin-bottom: 16px;
 }
-
-.card-header .el-icon {
-  font-size: 16px;
-  color: var(--primary-color);
-  margin-right: 8px;
-}
-
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 32px 0;
-}
-
-.empty-icon {
-  font-size: 48px;
-  color: var(--success-color);
-  margin-bottom: 12px;
-}
-
 .empty-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #4b5563;
 }
-
 .empty-desc {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 15px;
+  color: #9ca3af;
 }
-
-.image-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  font-size: 14px;
-  background-color: #f3f4f6;
-}
-
 .detection-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
 }
-
 .detection-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
-  background-color: #f9fafb;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
 }
-
 .item-name {
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.item-conf {
-  color: var(--primary-color);
+  background: #e8f5e9;
+  padding: 6px 18px;
+  border-radius: 40px;
+  font-size: 16px;
   font-weight: 600;
+  color: #2e7d32;
 }
-
+.item-conf {
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #cfb53b;
+}
 .total-count {
   margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-secondary);
+  font-size: 14px;
   text-align: right;
+  color: #5d6e4a;
 }
-
 .diagnosis-content {
-  font-size: 13px;
-  color: var(--text-secondary);
+  background: rgba(248,244,235,0.7);
+  padding: 20px;
+  border-radius: 32px;
+  color: #1a3a32;
+  font-size: 16px;
   line-height: 1.6;
 }
-
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 20px;
+  margin-top: 12px;
 }
-
-.btn-secondary {
+.btn-secondary, .btn-primary {
   flex: 1;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 14px;
+  border-radius: 60px;
+  height: 56px;
+  font-size: 18px;
+  font-weight: 600;
 }
-
+.btn-secondary {
+  background: white;
+  border: 1px solid #cfb53b;
+  color: #5d6e4a;
+}
+.btn-secondary:hover {
+  background: #fef5e6;
+}
 .btn-primary {
-  flex: 2;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 14px;
+  background: linear-gradient(135deg, #1a3a32, #2b5a48);
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.model-selector {
+  position: absolute;
+  top: -2px;     /* 向上移动 */
+  right: 0;
+  z-index: 10;
+}
+@media (max-width: 1200px) {
+  .detection-page {
+    padding: 24px 32px;
+  }
+  .main-content {
+    flex-direction: column;
+  }
+}
+@media (max-width: 768px) {
+  .function-tab {
+    flex: 1;
+    justify-content: center;
+  }
+  .panel-header {
+    flex-direction: column;
+  }
 }
 </style>
 
-<style>
-.classes-tooltip {
-  max-width: 360px !important;
-  word-break: break-all;
-}
-</style>
