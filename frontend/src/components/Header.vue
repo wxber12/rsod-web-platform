@@ -3,7 +3,7 @@
     <div class="breadcrumbs">
       <el-icon class="breadcrumb-icon"><House /></el-icon>
       <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-text">智能检测</span>
+      <span class="breadcrumb-text">{{ route.name || '智能检测' }}</span>
     </div>
 
     <div class="header-actions">
@@ -44,7 +44,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import {
   Grid,
   Bell,
@@ -56,6 +56,7 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 import request from '../utils/request';
 
 const router = useRouter();
+const route = useRoute();
 const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png';
 const userInfo = ref({
   username: '',
