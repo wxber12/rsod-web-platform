@@ -84,7 +84,7 @@ const handleMenuClick = (item) => {
   background: rgba(255, 252, 245, 0.88);
   backdrop-filter: blur(16px);
   border-right: 1px solid rgba(255, 245, 215, 0.6);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .logo-section {
@@ -96,8 +96,8 @@ const handleMenuClick = (item) => {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   background: linear-gradient(135deg, #1a3a32, #2b5a48);
   border-radius: 18px;
   display: flex;
@@ -112,7 +112,7 @@ const handleMenuClick = (item) => {
 }
 
 .logo-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   color: #1a3a32;
   line-height: 1.3;

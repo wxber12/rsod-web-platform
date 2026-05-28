@@ -20,6 +20,7 @@
 
 <style scoped>
 .main-layout {
+  --border-color: rgba(255, 245, 215, 0.6);
   display: flex;
   height: 100vh;
   overflow: hidden;
@@ -28,7 +29,6 @@
 .sidebar {
   width: 200px;
   background-color: #ffffff;
-  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
 }
@@ -43,7 +43,6 @@
 .header {
   height: 64px;
   background-color: #ffffff;
-  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -52,8 +51,8 @@
 
 .content {
   flex: 1;
-  padding: 24px 32px;
-  overflow-y: auto;
-  background-color: #f0f7f2;
+  padding: 0;
+  overflow-y: overlay;
+  background-color: transparent;
 }
 </style>

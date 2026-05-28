@@ -114,6 +114,7 @@ onMounted(() => {
   background: rgba(255, 252, 245, 0.96);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 245, 215, 0.8);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .breadcrumbs {
