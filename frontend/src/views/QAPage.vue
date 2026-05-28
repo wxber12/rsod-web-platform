@@ -125,7 +125,7 @@ onMounted(() => {
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   position: relative;
 }
 
@@ -145,6 +145,10 @@ onMounted(() => {
   position: relative;
   z-index: 2;
   margin-bottom: 32px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  border-radius: 24px;
+  padding: 28px 32px;
 }
 
 .page-title {
@@ -153,12 +157,14 @@ onMounted(() => {
   color: white;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: 12px;
-  letter-spacing: -0.5px;
+  letter-spacing: 2px;
 }
 
 .page-subtitle {
   font-size: 18px;
   color: rgba(255, 255, 240, 0.9);
+  font-weight: 500;
+  letter-spacing: 1px;
 }
 
 .chat-container {
@@ -271,12 +277,13 @@ onMounted(() => {
 }
 
 .send-btn {
-  width: 120px;
+  width: 130px;
   border-radius: 60px;
   background: linear-gradient(135deg, #1a3a32, #2b5a48);
   border: none;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 1px;
   transition: all 0.3s;
 }
 

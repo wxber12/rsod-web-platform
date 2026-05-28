@@ -48,10 +48,7 @@
           ref="fileInputs"
         />
         <el-icon :size="18" class="tab-icon"><component :is="tab.icon" /></el-icon>
-        <div class="tab-content">
-          <span class="tab-text">{{ tab.name }}</span>
-          <span class="tab-desc">{{ tab.desc }}</span>
-        </div>
+        <span class="tab-text">{{ tab.name }}</span>
       </div>
     </div>
 
@@ -487,7 +484,7 @@ const handleCameraDetected = (data) => {
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   position: relative;
 }
 .detection-page::before {
@@ -507,6 +504,10 @@ const handleCameraDetected = (data) => {
 }
 .page-header {
   margin-bottom: 32px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  border-radius: 24px;
+  padding: 28px 32px;
 }
 .breadcrumb {
   font-size: 16px;
@@ -523,30 +524,43 @@ const handleCameraDetected = (data) => {
   color: white;
   text-shadow: 0 2px 8px rgba(0,0,0,0.3);
   margin-bottom: 12px;
-  letter-spacing: -0.5px;
+  letter-spacing: 2px;
 }
 .page-subtitle {
   font-size: 18px;
   color: rgba(255,255,240,0.9);
+  font-weight: 500;
+  letter-spacing: 1px;
 }
+.model-selector :deep(.el-select) {
+  --el-select-bg-color: transparent;
+}
+.model-selector :deep(.el-select__wrapper),
 .model-selector :deep(.el-input__wrapper) {
-  background: rgba(255,252,245,0.95);
+  background: rgba(255,252,245,0.55) !important;
+  backdrop-filter: blur(10px);
   border-radius: 48px;
   padding: 8px 16px;
-  border: none;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+.model-selector :deep(.el-input) {
+  --el-input-bg-color: transparent;
 }
 .function-tabs {
   display: flex;
-  gap: 20px;
+  gap: 12px;
   margin-bottom: 36px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .function-tab {
   position: relative;
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 28px;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
   background: rgba(255,252,245,0.88);
   backdrop-filter: blur(12px);
   border-radius: 60px;
@@ -563,7 +577,8 @@ const handleCameraDetected = (data) => {
   border-color: #cfb53b;
 }
 .function-tab.active .tab-text,
-.function-tab.active .tab-desc {
+.function-tab.active .tab-desc,
+.function-tab.active .tab-icon {
   color: white;
 }
 .tab-icon {
@@ -576,8 +591,7 @@ const handleCameraDetected = (data) => {
   color: #1a3a32;
 }
 .tab-desc {
-  font-size: 14px;
-  color: #5d6e4a;
+  display: none;
 }
 .file-input {
   position: absolute;
@@ -757,7 +771,7 @@ const handleCameraDetected = (data) => {
 }
 .info-label {
   color: #5d6e4a;
-  font-weight: 500;
+  font-weight: 600;
 }
 .info-value {
   font-weight: 700;
@@ -867,8 +881,8 @@ const handleCameraDetected = (data) => {
 }
 .model-selector {
   position: absolute;
-  top: -2px;     /* 向上移动 */
-  right: 0;
+  top: 28px;
+  right: 48px;
   z-index: 10;
 }
 @media (max-width: 1200px) {
@@ -901,5 +915,14 @@ const handleCameraDetected = (data) => {
 }
 .list-move {
   transition: transform 0.3s ease;
+}
+</style>
+
+<style>
+/* 全局样式：tooltip 宽度限制（不能在 scoped 中生效） */
+.classes-tooltip {
+  max-width: 360px !important;
+  word-break: break-all;
+  line-height: 1.6;
 }
 </style>

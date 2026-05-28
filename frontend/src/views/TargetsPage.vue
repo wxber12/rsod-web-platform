@@ -237,6 +237,10 @@ onMounted(() => {
   position: relative;
   z-index: 2;
   margin-bottom: 32px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  border-radius: 24px;
+  padding: 28px 32px;
 }
 
 .page-title {
@@ -245,12 +249,13 @@ onMounted(() => {
   color: white;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: 12px;
-  letter-spacing: -0.5px;
+  letter-spacing: 2px;
 }
 
 .page-subtitle {
   font-size: 18px;
   color: rgba(255, 255, 240, 0.9);
+  letter-spacing: 1px;
 }
 
 .search-container {
