@@ -61,21 +61,36 @@ async def register(credentials: RegisterRequest):
     except Exception as e:
         return JSONResponse(status_code=500, content={"code": 500, "message": str(e)})
 
+@router.get("/ping")
+async def ping():
+    return {"status": "ok", "message": "Auth router is working"}
+
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
-    print(f"收到找回密码请求: email={request.email}")
+    print(f"DEBUG: 收到找回密码请求, email={request.email}")
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # 使用填写的邮箱去数据库中查找对应的用户
-        cursor.execute("SELECT id, email FROM users WHERE email = %s;", (request.email,))
+        # 使用填写的邮箱去数据库中查找对应的用户（不区分大小写）
+        cursor.execute("SELECT id, username, email FROM users WHERE LOWER(email) = LOWER(%s);", (request.email.strip(),))
         user = cursor.fetchone()
         
-        if not user or not user["email"]:
-            # 出于安全考虑，即使用户不存在也提示发送成功，防止恶意猜测邮箱
-            return {"code": 200, "message": "重置链接已发送到您的邮箱"}
+        if not user:
+            print(f"DEBUG: 数据库中未找到该邮箱: {request.email}")
+            return JSONResponse(
+                status_code=404, 
+                content={"code": 404, "message": "该邮箱尚未注册，请检查输入或先前往注册"}
+            )
+            
+        if not user["email"]:
+            print(f"DEBUG: 用户 {user['username']} 存在但邮箱字段为空")
+            return JSONResponse(
+                status_code=400, 
+                content={"code": 400, "message": "该用户未绑定邮箱，无法通过邮箱找回"}
+            )
             
         user_id = user["id"]
+        print(f"DEBUG: 找到用户 ID={user_id}, 准备发送邮件")
         
         # 生成重置 Token
         token_payload = {
@@ -92,12 +107,16 @@ async def forgot_password(request: ForgotPasswordRequest):
         success, error_msg = send_reset_password_email(user["email"], reset_link)
         
         if success:
+            print(f"DEBUG: 邮件发送成功!")
             return {"code": 200, "message": "重置链接已成功发送到您的邮箱，请查收！", "token": reset_token}
         else:
+            print(f"DEBUG: 邮件发送失败: {error_msg}")
             return JSONResponse(status_code=500, content={"code": 500, "message": f"邮件发送失败: {error_msg}"})
             
     except Exception as e:
-        return JSONResponse(status_code=500, content={"code": 500, "message": str(e)})
+        print(f"DEBUG: 找回密码逻辑出现异常: {str(e)}")
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"系统错误: {str(e)}"})
     finally:
         cursor.close()
         conn.close()

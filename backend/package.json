@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "sass-embedded": "^1.99.0"
-  },
-  "dependencies": {
-    "pinia": "^3.0.4"
-  }
-}

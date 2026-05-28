@@ -8,6 +8,10 @@
 
     <!-- 搜索和刷新 -->
     <div class="search-container">
+      <el-select v-model="selectedModel" placeholder="选择模型库" class="model-select" @change="fetchTargets">
+        <el-option label="遥感目标库 (Best)" value="best" />
+        <el-option label="植物病害库 (Last)" value="last" />
+      </el-select>
       <el-input
         v-model="searchQuery"
         placeholder="搜索病虫害类别..."
@@ -143,13 +147,16 @@ import {
   Ship,
   Location,
   Promotion,
-  Box
+  Box,
+  Sugar,
+  QuestionFilled
 } from "@element-plus/icons-vue";
 import request from '../utils/request';
 import { ElMessage } from "element-plus";
 
 const loading = ref(false);
 const searchQuery = ref("");
+const selectedModel = ref("best"); // 🌟 默认查看遥感库
 const showDialog = ref(false);
 const selectedTarget = ref(null);
 const targets = ref([]);
@@ -157,9 +164,13 @@ const targets = ref([]);
 const fetchTargets = async () => {
   loading.value = true;
   try {
-    const res = await request.get('/detection/targets/list');
+    const res = await request.get('/detection/targets/list', {
+      params: { model_name: selectedModel.value }
+    });
     if (res.success) {
       targets.value = res.data;
+    } else {
+      ElMessage.warning(res.message || "后端未返回有效数据");
     }
   } catch (error) {
     ElMessage.error("获取病虫害库失败");
@@ -170,12 +181,11 @@ const fetchTargets = async () => {
 
 // 根据病虫害名称返回对应图标（仅使用存在的图标）
 const getIcon = (name) => {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('apple')) return Promotion;
-  if (lowerName.includes('grape')) return Promotion;
-  if (lowerName.includes('corn') || lowerName.includes('maize')) return Box;
-  if (lowerName.includes('tomato')) return Aim;
-  if (lowerName.includes('potato')) return Aim;
+  if (name.includes('飞机')) return Promotion;
+  if (name.includes('油罐')) return Box;
+  if (name.includes('桥')) return Location;
+  if (name.includes('操场')) return Aim;
+  if (name.includes('苹果') || name.includes('番茄') || name.includes('健康')) return Sugar;
   return Aim;
 };
 
@@ -510,6 +520,20 @@ onMounted(() => {
   .targets-page {
     padding: 24px 24px;
   }
+  .search-container {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+    
+    .model-select {
+      width: 180px;
+    }
+    
+    .search-input {
+      width: 300px;
+    }
+  }
+
   .stats-cards {
     flex-direction: column;
   }

@@ -36,6 +36,7 @@
         @click="handleTabClick(tab.key)"
       >
         <input
+          v-if="tab.key !== 'camera'"
           type="file"
           :accept="tab.accept"
           :multiple="tab.multiple"
@@ -90,8 +91,13 @@
           </el-button>
         </div>
 
+        <!-- 摄像头检测区域 -->
+        <div v-if="activeTab === 'camera'" class="camera-section">
+          <CameraDetection :model-name="selectedModel" @detected="handleCameraDetected" />
+        </div>
+
         <!-- 图片对比区域 -->
-        <div class="image-compare">
+        <div v-else class="image-compare">
           <div class="image-card">
             <video
               v-if="originalVideo"
@@ -171,13 +177,14 @@
             <el-icon><List /></el-icon>
             <span class="card-title">病虫害清单</span>
           </div>
-
-          <div v-if="detectionResult && detectionResult.boxes && detectionResult.boxes.length > 0" class="detection-list">
-            <div v-for="(box, index) in detectionResult.boxes" :key="index" class="detection-item">
-              <span class="item-name">{{ box.class_name }}</span>
-              <span class="item-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
-            </div>
-            <div class="total-count">共识别 {{ detectionResult.total_objects }} 处病虫害</div>
+          <div v-if="detectionResult && detectionResult.boxes && detectionResult.boxes.filter(b => b.confidence > 0).length > 0" class="detection-list">
+            <transition-group name="list">
+              <div v-for="(box, index) in detectionResult.boxes.filter(b => b.confidence > 0)" :key="index + '-' + box.x1" class="detection-item">
+                <span class="item-name">{{ box.chinese_name || box.class_name }}</span>
+                <span class="item-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
+              </div>
+            </transition-group>
+            <div class="total-count">共检测到 {{ detectionResult.boxes.filter(b => b.confidence > 0).length }} 个目标</div>
           </div>
 
           <div v-else class="empty-state">
@@ -195,6 +202,9 @@
           </div>
           <div class="diagnosis-content">
             <p v-if="isDetecting">正在分析中...</p>
+            <p v-else-if="detectionResult && activeTab === 'camera'">
+              实时监控中... 当前画面检测到 {{ detectionResult.total_objects }} 个目标。系统正以 {{ detectionResult.fps }} FPS 的速率进行动态分析。
+            </p>
             <p v-else-if="detectionResult && activeTab === 'video'">
               视频检测已完成，共处理 {{ detectionResult.total_frames }} 帧，累计识别病虫害 {{ detectionResult.total_objects }} 次。您可以播放右侧结果视频查看识别动态。
             </p>
@@ -235,8 +245,11 @@ import {
   ChatDotRound,
   Refresh,
   Minus,
-  Loading
+  Loading,
+  VideoPlay,
+  VideoCamera
 } from "@element-plus/icons-vue";
+import CameraDetection from "./CameraDetection.vue";
 import { ElMessage } from "element-plus";
 import { detectSingleImage, detectBatchImages, detectVideo, getAvailableModels } from "../api/detection";
 
@@ -262,8 +275,7 @@ const resultImage = ref("");
 const originalVideo = ref("");
 const resultVideo = ref("");
 const detectionResult = ref(null);
-const batchResults = ref([]);
-
+const batchResults = ref([]); // 批量检测结果集
 const functionTabs = [
   {
     key: "single",
@@ -293,9 +305,17 @@ const functionTabs = [
   {
     key: "video",
     name: "视频检测",
-    desc: "上传视频自动分析",
-    icon: Monitor,
+    desc: "识别视频动态目标",
+    icon: VideoPlay,
     accept: "video/*",
+    multiple: false,
+  },
+  {
+    key: "camera",
+    name: "摄像头",
+    desc: "开启实时监控检测",
+    icon: VideoCamera,
+    accept: "",
     multiple: false,
   },
 ];
@@ -303,11 +323,27 @@ const functionTabs = [
 const fileInputs = ref([]);
 
 const handleTabClick = (key) => {
+  // 🌟 切换 Tab 时主动清理上一个模式遗留的结果，防止 UI 混乱
+  if (activeTab.value !== key) {
+    resetDetectionState();
+  }
+  
   activeTab.value = key;
   const input = document.querySelector(`.function-tab[data-key="${key}"] .file-input`);
   if (input) {
     input.click();
   }
+};
+
+// 🌟 抽取统一的状态重置函数
+const resetDetectionState = () => {
+  originalImage.value = "";
+  resultImage.value = "";
+  originalVideo.value = "";
+  resultVideo.value = "";
+  detectionResult.value = null;
+  batchResults.value = [];
+  isDetecting.value = false;
 };
 
 const handleFileChange = async (event, tabKey) => {
@@ -316,6 +352,10 @@ const handleFileChange = async (event, tabKey) => {
   let files = Array.from(event.target.files);
   if (!files || files.length === 0) return;
 
+  // 🌟 在开始新的检测请求前，彻底清空旧数据
+  resetDetectionState();
+  
+  // 过滤掉非影像文件（尤其是文件夹上传时可能带入的系统文件）
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.webp'];
   const videoExtensions = ['.mp4', '.avi', '.mov', '.mkv'];
 
@@ -332,21 +372,11 @@ const handleFileChange = async (event, tabKey) => {
 
   activeTab.value = tabKey;
   isDetecting.value = true;
-
+  // 初始化预览 (已在 resetDetectionState 中重置过，这里根据模式设置预览源)
   if (tabKey === 'single') {
     originalImage.value = URL.createObjectURL(files[0]);
-    resultImage.value = "";
-    originalVideo.value = "";
-    resultVideo.value = "";
-    detectionResult.value = null;
   } else if (tabKey === 'video') {
     originalVideo.value = URL.createObjectURL(files[0]);
-    resultVideo.value = "";
-    originalImage.value = "";
-    resultImage.value = "";
-    detectionResult.value = null;
-  } else {
-    batchResults.value = [];
   }
 
   try {
@@ -442,6 +472,10 @@ onMounted(async () => {
     console.error("获取模型列表失败:", e);
   }
 });
+
+const handleCameraDetected = (data) => {
+  detectionResult.value = data;
+};
 </script>
 
 <style scoped>
@@ -598,6 +632,10 @@ onMounted(async () => {
   background: #2e7d32;
   color: white;
   border-color: #2e7d32;
+}
+/* 图片对比区域 */
+.camera-section {
+  margin-top: 24px;
 }
 .image-compare {
   display: flex;
@@ -850,5 +888,18 @@ onMounted(async () => {
     flex-direction: column;
   }
 }
-</style>
 
+/* 列表动画 */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.list-move {
+  transition: transform 0.3s ease;
+}
+</style>

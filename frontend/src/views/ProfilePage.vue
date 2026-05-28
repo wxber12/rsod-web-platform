@@ -22,6 +22,9 @@
               <el-button size="small" type="warning" plain @click="changePasswordVisible = true">
                 修改密码
               </el-button>
+              <el-button size="small" type="danger" plain @click="handleLogout">
+                退出登录
+              </el-button>
             </div>
           </div>
         </div>
@@ -87,10 +90,12 @@
 <script setup>
 // 脚本部分完全保留原逻辑，不做任何修改
 import { ref, onMounted, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import { Message } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import request from '../utils/request';
 
+const router = useRouter();
 const loading = ref(false);
 const submitting = ref(false);
 const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png';
@@ -192,11 +197,26 @@ const handleChangePassword = async () => {
     });
     ElMessage.success('密码修改成功，请重新登录');
     changePasswordVisible.value = false;
+    // 自动触发退出登录
+    handleLogout();
   } catch (error) {
     ElMessage.error(error.response?.data?.detail || '修改失败');
   } finally {
     submitting.value = false;
   }
+};
+
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出当前账号并切换吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
+    router.push('/login');
+    ElMessage.success('已退出登录');
+  }).catch(() => {});
 };
 
 onMounted(() => {
