@@ -6,6 +6,7 @@ from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
 from app.config import settings
 from app.models.schemas import SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, TargetListResponse
+from database import get_db_connection
 import random
 
 router = APIRouter(prefix="/detection", tags=["detection"])
