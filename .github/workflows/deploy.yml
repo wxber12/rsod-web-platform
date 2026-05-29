@@ -8,20 +8,24 @@ on:
 
 jobs:
   deploy:
-    name: Deploy via SSH
+    name: Deploy via SCP + SSH
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to server
+      - uses: actions/checkout@v4
+
+      - name: Copy compose file to server
         run: |
           sudo apt-get install -y sshpass
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -o StrictHostKeyChecking=no -P ${{ secrets.SERVER_PORT }} docker-compose.server.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/opt/rsod-web-platform/docker-compose.server.yml
+
+      - name: Pull images and restart
+        run: |
           sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} << 'DEPLOY'
-            git config --global --add safe.directory /opt/rsod-web-platform
             cd /opt/rsod-web-platform
-            git pull origin main
-            docker compose -f docker-compose.server.yml down
             docker rmi ghcr.io/wxber12/rsod-frontend:latest || true
             docker rmi ghcr.io/wxber12/rsod-backend:latest || true
             docker compose -f docker-compose.server.yml pull
             docker compose -f docker-compose.server.yml up -d
+            docker image prune -f
           DEPLOY
