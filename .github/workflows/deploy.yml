@@ -19,6 +19,9 @@ jobs:
             git config --global --add safe.directory /opt/rsod-web-platform
             cd /opt/rsod-web-platform
             git pull origin main
+            docker compose -f docker-compose.server.yml down
+            docker rmi ghcr.io/wxber12/rsod-frontend:latest || true
+            docker rmi ghcr.io/wxber12/rsod-backend:latest || true
             docker compose -f docker-compose.server.yml pull
             docker compose -f docker-compose.server.yml up -d
           DEPLOY
