@@ -16,7 +16,12 @@
             <el-icon v-if="msg.role === 'ai'"><ChatDotRound /></el-icon>
             <el-icon v-else><User /></el-icon>
           </div>
-          <div class="message-content">
+          <div
+            v-if="msg.role === 'ai'"
+            class="message-content markdown-body"
+            v-html="renderMarkdown(msg.content)"
+          />
+          <div v-else class="message-content">
             {{ msg.content }}
           </div>
         </div>
@@ -60,6 +65,14 @@ import { ref, onMounted, nextTick, watch } from "vue";
 import { ChatDotRound, User } from "@element-plus/icons-vue";
 import { aiService } from "../api/ai_service";
 import { ElMessage } from "element-plus";
+import { marked } from "marked";
+
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
+
+const renderMarkdown = (text) => marked.parse(text);
 
 const question = ref("");
 const sending = ref(false);
@@ -220,6 +233,71 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  margin: 12px 0 8px;
+  font-weight: 700;
+}
+.markdown-body :deep(h1) { font-size: 1.4em; }
+.markdown-body :deep(h2) { font-size: 1.2em; }
+.markdown-body :deep(h3) { font-size: 1.1em; }
+
+.markdown-body :deep(p) {
+  margin: 6px 0;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 1.5em;
+  margin: 6px 0;
+}
+
+.markdown-body :deep(code) {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: Consolas, Monaco, monospace;
+}
+
+.markdown-body :deep(pre) {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.markdown-body :deep(pre code) {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.markdown-body :deep(blockquote) {
+  border-left: 4px solid #2b5a48;
+  padding-left: 14px;
+  margin: 10px 0;
+  color: #555;
+}
+
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  margin: 10px 0;
+  width: 100%;
+}
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+}
+.markdown-body :deep(th) {
+  background: #f0ebe0;
 }
 
 .message-content.loading {
